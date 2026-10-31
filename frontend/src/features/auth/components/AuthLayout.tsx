@@ -12,28 +12,41 @@ export function AuthLayout({
   children,
 }: AuthLayoutProps) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10 sm:px-6">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <p className="text-sm font-semibold tracking-wide text-blue-700">
-            BRIGHTLOOP
-          </p>
-          <p className="mt-1 text-xs text-slate-500">
-            Subscription management
-          </p>
-        </div>
-        <section
-          aria-labelledby="auth-title"
-          className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
-        >
-          <h1
-            className="text-2xl font-semibold tracking-tight text-slate-900"
-            id="auth-title"
-          >
-            {title}
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
-          <div className="mt-6">{children}</div>
+    <main className="auth-page">
+      <div className="auth-experience">
+        <aside aria-label="About Brightloop" className="auth-showcase">
+          <div className="auth-brand">
+            <span aria-hidden="true" className="brand-mark">B</span>
+            <span>BRIGHTLOOP</span>
+          </div>
+          <div className="auth-showcase-copy">
+            <p className="auth-showcase-kicker">Subscriptions, simplified</p>
+            <h2>
+              Your business,
+              <span className="block">in sync.</span>
+            </h2>
+            <p className="auth-showcase-description">
+              A clearer way to bring customers, plans, and billing together.
+            </p>
+            <div aria-hidden="true" className="auth-showcase-tags">
+              <span>Customers</span>
+              <span>Plans</span>
+              <span>Billing</span>
+            </div>
+          </div>
+        </aside>
+        <section aria-labelledby="auth-title" className="auth-content">
+          <div className="auth-brand">
+            <span aria-hidden="true" className="brand-mark">B</span>
+            <span>BRIGHTLOOP</span>
+          </div>
+          <div className="auth-form-panel">
+            <h1 className="auth-form-heading" id="auth-title">
+              {title}
+            </h1>
+            <p className="auth-form-description">{description}</p>
+            <div>{children}</div>
+          </div>
         </section>
       </div>
     </main>

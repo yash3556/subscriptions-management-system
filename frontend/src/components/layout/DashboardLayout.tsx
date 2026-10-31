@@ -35,7 +35,7 @@ export function DashboardLayout() {
       : (pageTitles[currentPage] ?? "Workspace");
 
   return (
-    <div className="min-h-screen bg-slate-50 md:flex">
+    <div className="app-layout min-h-screen md:flex">
       {sidebarOpen && (
         <button
           aria-label="Close navigation menu"
@@ -53,7 +53,7 @@ export function DashboardLayout() {
           pageTitle={pageTitle}
           onMenuClick={() => setSidebarOpen((open) => !open)}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="app-main flex-1 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

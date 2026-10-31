@@ -29,13 +29,13 @@ export function SubscriptionChart({
     >
       <ResponsiveContainer height="100%" width="100%">
         <BarChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
-          <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" />
-          <XAxis dataKey="status" tick={{ fill: "#64748b", fontSize: 12 }} />
-          <YAxis allowDecimals={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+          <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" />
+          <XAxis dataKey="status" tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
+          <YAxis allowDecimals={false} tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
           <Tooltip />
           <Bar
             dataKey="count"
-            fill="#0f766e"
+            fill="var(--violet-600)"
             name="Subscriptions"
             radius={[4, 4, 0, 0]}
           />

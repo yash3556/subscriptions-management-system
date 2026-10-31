@@ -26,26 +26,28 @@ export function DashboardPage() {
   return (
     <section
       aria-labelledby="dashboard-title"
-      className="mx-auto w-full max-w-7xl"
+      className="dashboard-page mx-auto w-full max-w-7xl"
     >
-      <div>
-        <h1
-          className="text-2xl font-semibold tracking-tight text-slate-900"
-          id="dashboard-title"
-        >
-          Overview
-        </h1>
-        <p className="mt-1 text-sm leading-6 text-slate-600">
-          Subscription and billing summary.
-        </p>
+      <div className="dashboard-heading">
+        <div>
+          <h1
+            className="text-2xl font-semibold tracking-tight text-slate-900"
+            id="dashboard-title"
+          >
+            Overview
+          </h1>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            Subscription and billing summary.
+          </p>
+        </div>
+        <div className="dashboard-date-filter">
+          <ReportDateFilter onChange={handleDateRange} />
+          <p className="mt-2 text-xs text-slate-500">
+            Summary values will appear when dashboard data is connected.
+          </p>
+        </div>
       </div>
-      <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
-        <ReportDateFilter onChange={handleDateRange} />
-        <p className="mt-3 text-xs text-slate-500">
-          Summary values will appear when dashboard data is connected.
-        </p>
-      </div>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="dashboard-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           description="Current active subscription total"
           icon={Repeat}
@@ -67,7 +69,7 @@ export function DashboardPage() {
           label="Overdue invoices"
         />
       </div>
-      <div className="mt-5 grid gap-5 xl:grid-cols-2">
+      <div className="dashboard-charts grid gap-4 xl:grid-cols-[minmax(0,1.8fr)_minmax(280px,0.9fr)]">
         <section className="rounded-lg border border-slate-200 bg-white p-5">
           <h2 className="font-semibold text-slate-900">Revenue</h2>
           <p className="mt-1 text-sm text-slate-600">
@@ -87,7 +89,7 @@ export function DashboardPage() {
           </div>
         </section>
       </div>
-      <div className="mt-5 grid gap-5 xl:grid-cols-2">
+      <div className="dashboard-summaries grid gap-4 xl:grid-cols-2">
         <EmptySummary
           description="Recent invoice information will appear when invoice data is connected."
           link="/app/invoices"
