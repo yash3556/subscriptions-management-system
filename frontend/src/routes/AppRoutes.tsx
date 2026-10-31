@@ -26,6 +26,10 @@ import { PortalOverviewPage } from "../features/portal/pages/PortalOverviewPage"
 import { PortalSubscriptionsPage } from "../features/portal/pages/PortalSubscriptionsPage";
 import { PortalInvoicesPage } from "../features/portal/pages/PortalInvoicesPage";
 import { RequireCustomer } from "../features/auth/components/RequireCustomer";
+import {
+  AccessDenied,
+  RequireInternal,
+} from "../features/auth/components/RequireInternal";
 
 const appPages = [
   { path: "dashboard", title: "Dashboard" },
@@ -60,48 +64,110 @@ export function AppRoutes() {
         <Route path="subscriptions" element={<PortalSubscriptionsPage />} />
         <Route path="invoices" element={<PortalInvoicesPage />} />
       </Route>
-      <Route path="/app" element={<DashboardLayout />}>
+      <Route
+        path="/app"
+        element={
+          <RequireInternal>
+            <DashboardLayout />
+          </RequireInternal>
+        }
+      >
         {appPages.map(({ path, title }) => (
           <Route
             key={path}
             path={path}
             element={
               path === "dashboard" ? (
-                <DashboardPage />
+                <RequireInternal permission="reports:read">
+                  <DashboardPage />
+                </RequireInternal>
               ) : path === "customers" ? (
-                <CustomersPage />
+                <RequireInternal permission="customers:read">
+                  <CustomersPage />
+                </RequireInternal>
               ) : path === "products" ? (
-                <ProductsPage />
+                <RequireInternal permission="products:read">
+                  <ProductsPage />
+                </RequireInternal>
               ) : path === "plans" ? (
-                <PlansPage />
+                <RequireInternal permission="plans:read">
+                  <PlansPage />
+                </RequireInternal>
               ) : path === "quotations" ? (
-                <QuotationsPage />
+                <RequireInternal permission="quotations:read">
+                  <QuotationsPage />
+                </RequireInternal>
               ) : path === "subscriptions" ? (
-                <SubscriptionsPage />
+                <RequireInternal permission="subscriptions:read">
+                  <SubscriptionsPage />
+                </RequireInternal>
               ) : path === "invoices" ? (
-                <InvoicesPage />
+                <RequireInternal permission="invoices:read">
+                  <InvoicesPage />
+                </RequireInternal>
               ) : path === "payments" ? (
-                <PaymentsPage />
+                <RequireInternal permission="payments:read">
+                  <PaymentsPage />
+                </RequireInternal>
               ) : path === "discounts" ? (
-                <DiscountsPage />
+                <RequireInternal permission="discounts:read">
+                  <DiscountsPage />
+                </RequireInternal>
               ) : path === "reports" ? (
-                <ReportsPage />
+                <RequireInternal permission="reports:read">
+                  <ReportsPage />
+                </RequireInternal>
               ) : path === "staff" ? (
-                <StaffPage />
+                <RequireInternal adminOnly>
+                  <StaffPage />
+                </RequireInternal>
               ) : (
                 <PlaceholderPage title={title} />
               )
             }
           />
         ))}
-        <Route path="customers/details" element={<CustomerDetailsPage />} />
-        <Route path="products/details" element={<ProductDetailsPage />} />
-        <Route path="plans/details" element={<PlanDetailsPage />} />
+        <Route
+          path="customers/details"
+          element={
+            <RequireInternal permission="customers:read">
+              <CustomerDetailsPage />
+            </RequireInternal>
+          }
+        />
+        <Route
+          path="products/details"
+          element={
+            <RequireInternal permission="products:read">
+              <ProductDetailsPage />
+            </RequireInternal>
+          }
+        />
+        <Route
+          path="plans/details"
+          element={
+            <RequireInternal permission="plans:read">
+              <PlanDetailsPage />
+            </RequireInternal>
+          }
+        />
         <Route
           path="subscriptions/details"
-          element={<SubscriptionDetailsPage />}
+          element={
+            <RequireInternal permission="subscriptions:read">
+              <SubscriptionDetailsPage />
+            </RequireInternal>
+          }
         />
-        <Route path="invoices/details" element={<InvoiceDetailsPage />} />
+        <Route
+          path="invoices/details"
+          element={
+            <RequireInternal permission="invoices:read">
+              <InvoiceDetailsPage />
+            </RequireInternal>
+          }
+        />
+        <Route path="no-access" element={<AccessDenied />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
       <Route path="/" element={<Navigate to="/app/dashboard" replace />} />

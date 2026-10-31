@@ -43,7 +43,24 @@ export function LoginPage() {
     setIsLoading(true);
     try {
       const user = await signIn(email.trim(), password);
-      navigate(user.role === "CUSTOMER" ? "/portal" : "/app/dashboard", {
+      const staffLanding = [
+        ["reports:read", "/app/dashboard"],
+        ["customers:read", "/app/customers"],
+        ["products:read", "/app/products"],
+        ["plans:read", "/app/plans"],
+        ["quotations:read", "/app/quotations"],
+        ["subscriptions:read", "/app/subscriptions"],
+        ["invoices:read", "/app/invoices"],
+        ["payments:read", "/app/payments"],
+        ["discounts:read", "/app/discounts"],
+      ].find(([permission]) => user.permissions.includes(permission));
+      const destination =
+        user.role === "CUSTOMER"
+          ? "/portal"
+          : user.role === "ADMIN"
+            ? "/app/dashboard"
+            : staffLanding?.[1] ?? "/app/no-access";
+      navigate(destination, {
         replace: true,
       });
     } catch (error) {

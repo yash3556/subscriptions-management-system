@@ -19,10 +19,10 @@ export function PortalInvoicesPage() {
         <span className="mb-3 inline-flex rounded-full bg-slate-100 p-3 text-slate-500">
           <FileText aria-hidden="true" size={22} />
         </span>
-        <p className="font-medium text-slate-900">No invoice data loaded</p>
+        <p className="font-medium text-slate-900">Invoice records unavailable</p>
         <p className="mx-auto mt-1 max-w-md text-sm leading-5 text-slate-600">
-          Invoice and payment information will appear after customer sign-in,
-          ownership enforcement, and backend integration are available.
+          The backend does not currently provide a customer-specific invoice
+          endpoint, so no invoice or payment records can be loaded.
         </p>
       </div>
     </section>

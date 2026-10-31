@@ -47,12 +47,78 @@ interface CsrfResponse {
   csrf_token: string;
 }
 
+interface MessageResponse {
+  message: string;
+}
+
+interface ResetPasswordRequest {
+  token: string;
+  new_password: string;
+}
+
 export async function login(
   credentials: LoginRequest,
 ): Promise<AuthenticatedUser> {
   const response = await api.post<LoginResponse>("/auth/login", credentials);
   setAccessToken(response.data.access_token);
   return response.data.user;
+}
+
+export async function requestPasswordReset(email: string): Promise<string> {
+  const response = await api.post<MessageResponse>(
+    "/auth/forgot-password",
+    { email },
+  );
+  return response.data.message;
+}
+
+export async function resetPassword(
+  payload: ResetPasswordRequest,
+): Promise<string> {
+  const response = await api.post<MessageResponse>(
+    "/auth/reset-password",
+    payload,
+  );
+  return response.data.message;
+}
+
+function getPasswordRecoveryErrorMessage(
+  error: unknown,
+  action: "request" | "reset",
+): string {
+  const actionText = action === "request" ? "send the request" : "reset the password";
+  if (!axios.isAxiosError<ApiErrorResponse>(error)) {
+    return `We couldn't ${actionText}. Please try again.`;
+  }
+
+  if (!error.response) {
+    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+      return "The server took too long to respond. Please try again.";
+    }
+    return "Couldn't reach the server. Check your connection and try again.";
+  }
+
+  if (error.response.status === 422) {
+    return action === "request"
+      ? "Enter a valid email address."
+      : "The new password does not meet the password requirements.";
+  }
+  if (action === "reset" && error.response.status === 400) {
+    return "This reset link is invalid, expired, or already used. Request a new link.";
+  }
+  if (error.response.status === 503) {
+    return "The service is temporarily unavailable. Please try again later.";
+  }
+
+  return `We couldn't ${actionText} right now. Please try again later.`;
+}
+
+export function getForgotPasswordErrorMessage(error: unknown): string {
+  return getPasswordRecoveryErrorMessage(error, "request");
+}
+
+export function getResetPasswordErrorMessage(error: unknown): string {
+  return getPasswordRecoveryErrorMessage(error, "reset");
 }
 
 let refreshSessionPromise: Promise<AuthenticatedUser> | null = null;
