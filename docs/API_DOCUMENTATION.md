@@ -111,11 +111,19 @@ users and stale token versions are rejected on each protected request.
 ```
 
 Returns `202 Accepted` with the same message whether the account exists or not.
-The API sends a single-use, time-limited link using environment-configured SMTP
-with an in-process background task after the response. Delivery failures are
-logged safely and do not change the generic public response. Delivery is not
-backed by a durable queue; production deployments needing guaranteed delivery
-should add an outbox/queue in a later reliability phase.
+The API sends a single-use reset link using environment-configured SMTP with a
+FastAPI background task immediately after the response. The link opens the
+frontend `/reset-password?token=...` page. Reset tokens expire after exactly 15
+minutes; only their SHA-256 hash is stored. Delivery failures are logged
+without sensitive information and do not change the generic public response.
+Delivery is not backed by a durable queue; production deployments needing
+guaranteed delivery should add an outbox/queue in a later reliability phase.
+
+Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`,
+`SMTP_FROM_EMAIL`, `SMTP_USE_TLS`, and `SMTP_USE_SSL` through environment
+variables. `PASSWORD_RESET_URL` must point to the deployed frontend reset page.
+A `password_reset_email_accepted_by_smtp` application log indicates acceptance
+by the configured SMTP server; it does not guarantee inbox delivery.
 
 Response:
 

@@ -150,7 +150,12 @@ def _deliver_reset_email(settings: Settings, recipient: str, link: str) -> None:
     except EmailDeliveryError as exc:
         logger.warning(
             "password_reset_email_delivery_failed",
-            extra={"exception_type": type(exc).__name__},
+            extra={"status": "failed", "exception_type": type(exc).__name__},
+        )
+    else:
+        logger.info(
+            "password_reset_email_accepted_by_smtp",
+            extra={"status": "accepted_by_smtp"},
         )
 
 

@@ -318,6 +318,7 @@ def test_forgot_password_is_generic_and_reset_token_is_single_use(
     )
     assert record is not None
     assert "token" not in record
+    assert record["expires_at"] - record["created_at"] == timedelta(minutes=15)
 
     reset_payload = {"token": token, "new_password": "ChangedPass!9"}
     reset = client.post(f"{AUTH_ROOT}/reset-password", json=reset_payload)

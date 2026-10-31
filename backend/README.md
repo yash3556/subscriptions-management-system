@@ -82,6 +82,17 @@ API does not accept a role field.
 Password reset requires configured SMTP settings. Responses remain generic if
 an address is unknown or email delivery fails; delivery failures are logged
 without the recipient, reset token, message, or SMTP credentials.
+Reset links expire after 15 minutes and are single-use. The raw reset token is
+only included in the emailed frontend URL; MongoDB stores its SHA-256 hash.
+Email is sent immediately as a FastAPI background task after the generic
+response. A successful `password_reset_email_accepted_by_smtp` log means the
+SMTP server accepted the message, not that it reached the recipient's inbox.
+
+Configure SMTP in the local `.env` or deployment environment; never commit
+credentials. For Gmail, use `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`,
+`SMTP_USE_TLS=true`, `SMTP_USE_SSL=false`, `SMTP_USERNAME`, `SMTP_PASSWORD`
+(an app password), and `SMTP_FROM_EMAIL` matching the sending account.
+Set `PASSWORD_RESET_URL` to the deployed frontend's `/reset-password` URL.
 
 ## Tests
 
