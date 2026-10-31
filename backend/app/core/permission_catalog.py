@@ -1,0 +1,21 @@
+STAFF_PERMISSION_CATALOG = frozenset(
+    {
+        "customers:read",
+        "customers:write",
+        "products:read",
+        "products:write",
+        "plans:read",
+        "plans:write",
+        "quotations:read",
+        "quotations:write",
+        "subscriptions:read",
+        "subscriptions:write",
+        "invoices:read",
+        "invoices:write",
+        "payments:read",
+        "payments:write",
+        "discounts:read",
+        "discounts:write",
+        "reports:read",
+    }
+)
