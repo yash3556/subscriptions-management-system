@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     jwt_audience: str = Field(default="brightloop-frontend", min_length=1)
     access_token_expire_minutes: int = Field(default=15, gt=0, le=120)
     refresh_token_expire_days: int = Field(default=7, gt=0, le=90)
-    password_reset_token_expire_minutes: int = Field(default=30, gt=0, le=120)
+    password_reset_token_expire_minutes: int = Field(default=15, ge=15, le=15)
     auth_cookie_secure: bool | None = None
     auth_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     login_rate_limit_attempts: int = Field(default=5, gt=0, le=100)

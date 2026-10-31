@@ -4,6 +4,7 @@ import {
   FileText,
   CreditCard,
   LayoutDashboard,
+  LogOut,
   Repeat,
   LogOut,
 } from "lucide-react";
@@ -37,6 +38,7 @@ export function PortalLayout() {
   return (
     <div className="portal-shell min-h-screen bg-slate-50">
       <header className="portal-header border-b border-slate-200 bg-white">
+<<<<<<< HEAD
         <div className="mx-auto flex min-h-16 max-w-7xl items-center px-4 sm:px-6">
           <span className="text-lg font-semibold tracking-tight text-slate-900">
             Brightloop
@@ -52,6 +54,31 @@ export function PortalLayout() {
               type="button"
             >
               <LogOut aria-hidden="true" size={16} /> Sign out
+=======
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+          <div className="flex min-w-0 items-center">
+            <span className="text-lg font-semibold tracking-tight text-slate-900">
+              Brightloop
+            </span>
+            <span className="ml-3 hidden border-l border-slate-200 pl-3 text-sm text-slate-500 sm:inline">
+              Customer portal
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            {user?.name && (
+              <span className="hidden max-w-40 truncate text-sm text-slate-600 sm:inline">
+                {user.name}
+              </span>
+            )}
+            <button
+              aria-label="Sign out"
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+              onClick={() => void handleSignOut()}
+              type="button"
+            >
+              <LogOut aria-hidden="true" size={16} />
+              <span>Sign out</span>
+>>>>>>> f71e74c404f315eeacf5785a023e6fe364cace18
             </button>
           </div>
         </div>
