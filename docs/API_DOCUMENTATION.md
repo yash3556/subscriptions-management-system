@@ -178,20 +178,23 @@ Customer ownership helper `ensure_customer_owns_resource(...)` returns 404 for
 another customer's resource. Future invoice, subscription, payment, and other
 customer-resource routes must call it after loading each resource.
 
-## Frontend integration changes
+## Frontend integration status
 
-The existing frontend login/register forms and Axios client are placeholders and
-currently do not call the backend. Integration requires:
+The frontend Axios client uses `VITE_API_BASE_URL` (default
+`http://localhost:8000/api/v1`), sends credentials, and keeps the access token
+in memory for bearer-authenticated requests. On app startup it obtains a CSRF
+token and refreshes the session; the refresh response already includes the
+current database-backed user profile. Refresh and logout send the CSRF token in
+`X-CSRF-Token`.
 
-1. Set `VITE_API_BASE_URL=http://localhost:8000/api/v1`.
-2. Set Axios `withCredentials: true`.
-3. Keep the access token in application memory and attach it as a bearer token;
-   do not persist refresh tokens in local/session storage.
-4. Read `brightloop_csrf` from `document.cookie` and send it as `X-CSRF-Token`
-   for refresh and logout. Send the configured `Origin` is handled by browsers.
-5. On reload, obtain a CSRF cookie (`GET /auth/csrf`), refresh to receive a new
-   access token, then fetch `/auth/me`.
-6. Map API `name`, `email`, `role`, and `permissions` to the auth context.
-7. Add a password-reset form that accepts the `token` query parameter.
+The login and registration forms are connected to their documented endpoints.
+Customer routes require a customer session; internal routes require an
+authenticated Admin or Internal Staff account, with staff route visibility and
+access checked against the documented permission catalog. Staff management is
+connected to the documented `/api/v1/staff` operations and is Admin-only.
 
-Frontend changes are intentionally out of scope for this backend phase.
+Business screens are not API-integrated: customer, product, plan, quotation,
+subscription, invoice, payment, discount, dashboard, and report endpoints and
+their business response schemas are not implemented yet. In particular, the
+Customer Portal cannot load subscriptions, invoices, or payments until
+customer-specific endpoints and their ownership enforcement are implemented.
