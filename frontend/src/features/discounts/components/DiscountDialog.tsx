@@ -2,9 +2,12 @@ import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { DiscountForm } from "./DiscountForm";
 import type { DiscountFormValues, DiscountRecord } from "../types";
+import type { BusinessRecord } from "../../../services/businessService";
 
 interface DiscountDialogProps {
   discount?: DiscountRecord;
+  products: BusinessRecord[];
+  isSubmitting?: boolean;
   notice?: string;
   onClose: () => void;
   onSubmit: (values: DiscountFormValues) => void;
@@ -12,6 +15,8 @@ interface DiscountDialogProps {
 
 export function DiscountDialog({
   discount,
+  products,
+  isSubmitting,
   notice,
   onClose,
   onSubmit,
@@ -67,6 +72,8 @@ export function DiscountDialog({
         )}
         <DiscountForm
           initialDiscount={discount}
+          products={products}
+          isSubmitting={isSubmitting}
           onCancel={onClose}
           onSubmit={onSubmit}
         />

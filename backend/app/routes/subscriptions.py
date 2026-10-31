@@ -7,14 +7,20 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.core.permissions import get_current_user
 from app.models.user import UserRole
-from app.schemas.subscription import SubscriptionActivate
+from app.schemas.subscription import SubscriptionActivate, SubscriptionRenew
 from app.services.business_service import (
 	customer_owns,
 	get_customer_for_user,
 	require_business_permission,
 	serialize_document,
 )
-from app.services.subscription_service import activate_subscription, close_subscription
+from app.services.subscription_service import (
+	activate_subscription,
+	close_subscription,
+	pause_subscription,
+	resume_subscription,
+	renew_subscription,
+)
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
 
@@ -58,6 +64,27 @@ def get_subscription(
 	return serialize_document(subscription)
 
 
+@router.get("/{subscription_id}/history")
+def get_subscription_history(
+	subscription_id: str,
+	request: Request,
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	if not ObjectId.is_valid(subscription_id):
+		raise HTTPException(status_code=404, detail="Subscription not found")
+	database = request.app.state.mongo.database
+	subscription = database.subscriptions.find_one({"_id": ObjectId(subscription_id)})
+	if not subscription:
+		raise HTTPException(status_code=404, detail="Subscription not found")
+	customer = database.customers.find_one({"_id": subscription["customer_id"]})
+	if user.get("role") == UserRole.CUSTOMER.value:
+		if not customer or not customer_owns(user, customer):
+			raise HTTPException(status_code=404, detail="Subscription not found")
+	else:
+		require_business_permission(user, "subscriptions:read")
+	return {"items": serialize_document({"items": subscription.get("history", [])})["items"]}
+
+
 @router.post("/{subscription_id}/activate")
 def activate(
 	subscription_id: str,
@@ -71,6 +98,55 @@ def activate(
 		subscription_id,
 		start_at=payload.start_at,
 		expires_at=payload.expires_at,
+		actor_id=user["_id"],
+	)
+	return serialize_document(subscription)
+
+
+@router.post("/{subscription_id}/pause")
+def pause(
+	subscription_id: str,
+	request: Request,
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	require_business_permission(user, "subscriptions:write")
+	subscription = pause_subscription(
+		request.app.state.mongo.database,
+		subscription_id,
+		actor_id=user["_id"],
+	)
+	return serialize_document(subscription)
+
+
+@router.post("/{subscription_id}/resume")
+def resume(
+	subscription_id: str,
+	request: Request,
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	require_business_permission(user, "subscriptions:write")
+	subscription = resume_subscription(
+		request.app.state.mongo.database,
+		subscription_id,
+		actor_id=user["_id"],
+	)
+	return serialize_document(subscription)
+
+
+@router.post("/{subscription_id}/renew")
+def renew(
+	subscription_id: str,
+	payload: SubscriptionRenew,
+	request: Request,
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	require_business_permission(user, "subscriptions:write")
+	subscription = renew_subscription(
+		request.app.state.mongo.database,
+		subscription_id,
+		start_at=payload.start_at,
+		expires_at=payload.expires_at,
+		actor_id=user["_id"],
 	)
 	return serialize_document(subscription)
 
@@ -82,4 +158,10 @@ def close(
 	user: dict[str, Any] = Depends(get_current_user),
 ):
 	require_business_permission(user, "subscriptions:write")
-	return serialize_document(close_subscription(request.app.state.mongo.database, subscription_id))
+	return serialize_document(
+		close_subscription(
+			request.app.state.mongo.database,
+			subscription_id,
+			actor_id=user["_id"],
+		)
+	)

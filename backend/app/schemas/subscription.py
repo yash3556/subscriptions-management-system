@@ -30,6 +30,15 @@ class QuotationCreate(BaseModel):
 	customer_id: ObjectIdString | None = None
 	lines: list[QuotationLineRequest] = Field(min_length=1, max_length=100)
 	validity_days: int = Field(default=14, ge=1, le=90)
+	notes: str | None = Field(default=None, max_length=2000)
+
+
+class QuotationUpdate(BaseModel):
+	model_config = ConfigDict(extra="forbid")
+
+	lines: list[QuotationLineRequest] | None = Field(default=None, min_length=1, max_length=100)
+	validity_days: int | None = Field(default=None, ge=1, le=90)
+	notes: str | None = Field(default=None, max_length=2000)
 
 
 class SubscriptionActivate(BaseModel):
@@ -44,6 +53,24 @@ class SubscriptionActivate(BaseModel):
 			raise ValueError("start_at must be timezone-aware")
 		if self.expires_at:
 			if self.expires_at.tzinfo is None:
+				raise ValueError("expires_at must be timezone-aware")
+			if self.expires_at <= self.start_at:
+				raise ValueError("expires_at must follow start_at")
+		return self
+
+
+class SubscriptionRenew(BaseModel):
+	model_config = ConfigDict(extra="forbid")
+
+	start_at: datetime
+	expires_at: datetime | None = None
+
+	@model_validator(mode="after")
+	def validate_dates(self):
+		if self.start_at.tzinfo is None or self.start_at.utcoffset() is None:
+			raise ValueError("start_at must be timezone-aware")
+		if self.expires_at is not None:
+			if self.expires_at.tzinfo is None or self.expires_at.utcoffset() is None:
 				raise ValueError("expires_at must be timezone-aware")
 			if self.expires_at <= self.start_at:
 				raise ValueError("expires_at must follow start_at")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from bson import ObjectId
@@ -31,13 +32,22 @@ def get_my_customer(request: Request, user: dict[str, Any] = Depends(get_current
 @router.get("")
 def list_customers(
 	request: Request,
+	q: str | None = Query(default=None, max_length=120),
 	page: int = Query(default=1, ge=1),
 	page_size: int = Query(default=50, ge=1, le=100),
 	user: dict[str, Any] = Depends(get_current_user),
 ):
 	require_business_permission(user, "customers:read")
 	database = request.app.state.mongo.database
-	cursor = database.customers.find({}).sort("created_at", -1).skip((page - 1) * page_size).limit(page_size)
+	query: dict[str, Any] = {}
+	if q and q.strip():
+		pattern = re.escape(q.strip())
+		query["$or"] = [
+			{"name": {"$regex": pattern, "$options": "i"}},
+			{"email": {"$regex": pattern, "$options": "i"}},
+			{"phone": {"$regex": pattern, "$options": "i"}},
+		]
+	cursor = database.customers.find(query).sort("created_at", -1).skip((page - 1) * page_size).limit(page_size)
 	return {"items": [serialize_document(item) for item in cursor], "page": page, "page_size": page_size}
 
 
@@ -105,3 +115,107 @@ def update_customer(
 	changes["updated_at"] = now_utc()
 	database.customers.update_one({"_id": customer["_id"]}, {"$set": changes})
 	return serialize_document(database.customers.find_one({"_id": customer["_id"]}))
+
+
+@router.delete("/{customer_id}", status_code=204)
+def delete_customer(
+	customer_id: str,
+	request: Request,
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	require_business_permission(user, "customers:write")
+	if not ObjectId.is_valid(customer_id):
+		raise HTTPException(status_code=404, detail="Customer not found")
+	database = request.app.state.mongo.database
+	customer_object_id = ObjectId(customer_id)
+	if not database.customers.find_one({"_id": customer_object_id}):
+		raise HTTPException(status_code=404, detail="Customer not found")
+	for collection_name in ("quotations", "subscriptions", "invoices", "payments"):
+		if database[collection_name].find_one({"customer_id": customer_object_id}, {"_id": 1}):
+			raise HTTPException(
+				status_code=409,
+				detail="Customer has business records and cannot be deleted",
+			)
+	database.customers.delete_one({"_id": customer_object_id})
+
+
+def _customer_records(
+	customer_id: str,
+	request: Request,
+	user: dict[str, Any],
+	collection_name: str,
+	page: int,
+	page_size: int,
+):
+	database = request.app.state.mongo.database
+	if user.get("role") == UserRole.CUSTOMER.value:
+		customer = get_customer_for_user(database, user)
+		if str(customer["_id"]) != customer_id:
+			raise HTTPException(status_code=404, detail="Customer not found")
+	else:
+		require_business_permission(user, "customers:read")
+		if not ObjectId.is_valid(customer_id):
+			raise HTTPException(status_code=404, detail="Customer not found")
+		customer = database.customers.find_one({"_id": ObjectId(customer_id)})
+		if not customer:
+			raise HTTPException(status_code=404, detail="Customer not found")
+	query: dict[str, Any] = {"customer_id": customer["_id"]}
+	if collection_name == "payments":
+		query["status"] = "recorded"
+	sort_field = "recorded_at" if collection_name == "payments" else "created_at"
+	cursor = (
+		database[collection_name]
+		.find(query)
+		.sort(sort_field, -1)
+		.skip((page - 1) * page_size)
+		.limit(page_size)
+	)
+	return {
+		"items": [serialize_document(item) for item in cursor],
+		"page": page,
+		"page_size": page_size,
+	}
+
+
+@router.get("/{customer_id}/quotations")
+def customer_quotations(
+	customer_id: str,
+	request: Request,
+	page: int = Query(default=1, ge=1),
+	page_size: int = Query(default=50, ge=1, le=100),
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	return _customer_records(customer_id, request, user, "quotations", page, page_size)
+
+
+@router.get("/{customer_id}/subscriptions")
+def customer_subscriptions(
+	customer_id: str,
+	request: Request,
+	page: int = Query(default=1, ge=1),
+	page_size: int = Query(default=50, ge=1, le=100),
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	return _customer_records(customer_id, request, user, "subscriptions", page, page_size)
+
+
+@router.get("/{customer_id}/invoices")
+def customer_invoices(
+	customer_id: str,
+	request: Request,
+	page: int = Query(default=1, ge=1),
+	page_size: int = Query(default=50, ge=1, le=100),
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	return _customer_records(customer_id, request, user, "invoices", page, page_size)
+
+
+@router.get("/{customer_id}/payments")
+def customer_payments(
+	customer_id: str,
+	request: Request,
+	page: int = Query(default=1, ge=1),
+	page_size: int = Query(default=50, ge=1, le=100),
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	return _customer_records(customer_id, request, user, "payments", page, page_size)

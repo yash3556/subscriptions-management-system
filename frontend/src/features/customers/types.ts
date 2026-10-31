@@ -6,9 +6,11 @@ export interface CustomerFormValues {
 }
 
 export interface CustomerSummary {
+  id: string;
   name: string;
   email: string;
   phone?: string;
+  billing_address?: Record<string, string>;
   billingAddress?: string;
   createdAt?: string;
 }

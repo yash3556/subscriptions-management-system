@@ -14,6 +14,7 @@ export interface PlanFormValues {
 }
 
 export interface PlanRecord {
+  id: string;
   name: string;
   price: number;
   frequency: BillingFrequency;
@@ -24,4 +25,5 @@ export interface PlanRecord {
   allowEarlyClosure: boolean;
   allowPause: boolean;
   allowRenewal: boolean;
+  isActive: boolean;
 }

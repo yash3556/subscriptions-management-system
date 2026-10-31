@@ -4,8 +4,10 @@ import { PlanActions } from "./PlanActions";
 
 interface PlanTableProps {
   plans: PlanRecord[];
+  canWrite?: boolean;
   onView: (plan: PlanRecord) => void;
   onEdit: (plan: PlanRecord) => void;
+  onDeactivate: (plan: PlanRecord) => void;
 }
 
 function formatPrice(value: number) {
@@ -21,7 +23,7 @@ const frequencyLabels: Record<PlanRecord["frequency"], string> = {
   yearly: "Yearly",
 };
 
-export function PlanTable({ plans, onView, onEdit }: PlanTableProps) {
+export function PlanTable({ plans, canWrite = false, onView, onEdit, onDeactivate }: PlanTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
       <div className="overflow-x-auto">
@@ -49,13 +51,13 @@ export function PlanTable({ plans, onView, onEdit }: PlanTableProps) {
             {plans.map((plan, index) => (
               <tr
                 className="text-slate-700 hover:bg-slate-50"
-                key={`${plan.name}-${index}`}
+                key={plan.id || `${plan.name}-${index}`}
               >
                 <th
                   className="whitespace-nowrap px-5 py-4 font-medium text-slate-900"
                   scope="row"
                 >
-                  {plan.name}
+                  {plan.name} {!plan.isActive && <span className="ml-2 text-xs text-slate-500">(inactive)</span>}
                 </th>
                 <td className="whitespace-nowrap px-5 py-4 text-right tabular-nums">
                   {formatPrice(plan.price)}
@@ -68,7 +70,9 @@ export function PlanTable({ plans, onView, onEdit }: PlanTableProps) {
                 </td>
                 <td className="px-5 py-3">
                   <PlanActions
+                    canWrite={canWrite}
                     onEdit={() => onEdit(plan)}
+                    onDeactivate={() => onDeactivate(plan)}
                     onView={() => onView(plan)}
                   />
                 </td>
@@ -85,7 +89,7 @@ export function PlanTable({ plans, onView, onEdit }: PlanTableProps) {
                       No subscription plans available
                     </p>
                     <p className="mt-1 text-sm leading-5 text-slate-500">
-                      Plans will appear here when plan data is connected.
+                      Add a subscription plan to get started.
                     </p>
                   </div>
                 </td>

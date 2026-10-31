@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from datetime import timezone
+import re
 from typing import Any
 from uuid import uuid4
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
-from app.core.permissions import get_current_user, require_admin
+from app.core.permissions import get_current_user
 from app.models.user import UserRole
 from app.schemas.product import ProductCreate, ProductUpdate
-from app.services.business_service import now_utc, serialize_document
+from app.services.business_service import now_utc, require_business_permission, serialize_document
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -25,15 +25,29 @@ def _visible_product(product: dict[str, Any], role: str) -> dict[str, Any]:
 @router.get("")
 def list_products(
 	request: Request,
+	q: str | None = Query(default=None, max_length=120),
+	product_type: str | None = Query(default=None, max_length=80),
+	is_active: bool | None = None,
 	page: int = Query(default=1, ge=1),
 	page_size: int = Query(default=50, ge=1, le=100),
 	user: dict[str, Any] = Depends(get_current_user),
 ):
-	if user.get("role") == UserRole.INTERNAL_STAFF.value:
-		if "products:read" not in user.get("permissions", []):
-			raise HTTPException(status_code=403, detail="Insufficient permissions")
+	if user.get("role") != UserRole.CUSTOMER.value:
+		require_business_permission(user, "products:read")
 	database = request.app.state.mongo.database
-	query = {"is_active": True} if user.get("role") == UserRole.CUSTOMER.value else {}
+	query: dict[str, Any] = {}
+	if user.get("role") == UserRole.CUSTOMER.value:
+		query["is_active"] = True
+	elif is_active is not None:
+		query["is_active"] = is_active
+	if product_type:
+		query["product_type"] = product_type.strip()
+	if q and q.strip():
+		pattern = re.escape(q.strip())
+		query["$or"] = [
+			{"name": {"$regex": pattern, "$options": "i"}},
+			{"notes": {"$regex": pattern, "$options": "i"}},
+		]
 	cursor = database.products.find(query).sort("name", 1).skip((page - 1) * page_size).limit(page_size)
 	return {"items": [_visible_product(item, user["role"]) for item in cursor], "page": page, "page_size": page_size}
 
@@ -42,8 +56,9 @@ def list_products(
 def create_product(
 	payload: ProductCreate,
 	request: Request,
-	_admin: dict[str, Any] = Depends(require_admin),
+	user: dict[str, Any] = Depends(get_current_user),
 ):
+	require_business_permission(user, "products:write")
 	document = payload.model_dump()
 	document["variants"] = [
 		{"id": uuid4().hex, **variant.model_dump()} for variant in payload.variants
@@ -65,8 +80,8 @@ def get_product(
 	product = request.app.state.mongo.database.products.find_one({"_id": ObjectId(product_id)})
 	if not product or (user.get("role") == UserRole.CUSTOMER.value and not product.get("is_active")):
 		raise HTTPException(status_code=404, detail="Product not found")
-	if user.get("role") == UserRole.INTERNAL_STAFF.value and "products:read" not in user.get("permissions", []):
-		raise HTTPException(status_code=403, detail="Insufficient permissions")
+	if user.get("role") != UserRole.CUSTOMER.value:
+		require_business_permission(user, "products:read")
 	return _visible_product(product, user["role"])
 
 
@@ -75,8 +90,9 @@ def update_product(
 	product_id: str,
 	payload: ProductUpdate,
 	request: Request,
-	_admin: dict[str, Any] = Depends(require_admin),
+	user: dict[str, Any] = Depends(get_current_user),
 ):
+	require_business_permission(user, "products:write")
 	if not ObjectId.is_valid(product_id):
 		raise HTTPException(status_code=404, detail="Product not found")
 	changes = payload.model_dump(exclude_unset=True)
@@ -98,8 +114,9 @@ def update_product(
 def deactivate_product(
 	product_id: str,
 	request: Request,
-	_admin: dict[str, Any] = Depends(require_admin),
+	user: dict[str, Any] = Depends(get_current_user),
 ):
+	require_business_permission(user, "products:write")
 	if not ObjectId.is_valid(product_id):
 		raise HTTPException(status_code=404, detail="Product not found")
 	result = request.app.state.mongo.database.products.update_one(

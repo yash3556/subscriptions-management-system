@@ -10,6 +10,7 @@ class ProductVariantIn(BaseModel):
 
 	name: str = Field(min_length=1, max_length=80)
 	price_adjustment_paise: StrictInt = Field(ge=0)
+	is_active: bool = True
 
 	@field_validator("name")
 	@classmethod

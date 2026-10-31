@@ -22,7 +22,14 @@ def _parse_utc(value: datetime | None) -> datetime | None:
 
 @router.get("/summary")
 def summary(request: Request, _user: dict[str, Any] = Depends(require_permission("reports:read"))):
-	return dashboard_summary(request.app.state.mongo.database)
+	result = dashboard_summary(request.app.state.mongo.database)
+	result["recent_transactions"] = [
+		serialize_document(item) for item in result["recent_transactions"]
+	]
+	result["recent_subscriptions"] = [
+		serialize_document(item) for item in result["recent_subscriptions"]
+	]
+	return result
 
 
 @router.get("/revenue")

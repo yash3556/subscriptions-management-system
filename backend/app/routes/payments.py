@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from bson import ObjectId
@@ -18,6 +19,9 @@ router = APIRouter(prefix="/payments", tags=["payments"])
 def list_payments(
 	request: Request,
 	invoice_id: str | None = None,
+	status: str | None = Query(default=None, pattern="^(pending|recorded|failed|refunded)$"),
+	method: str | None = Query(default=None, pattern="^(cash|bank_transfer|upi|card|other)$"),
+	q: str | None = Query(default=None, max_length=120),
 	page: int = Query(default=1, ge=1),
 	page_size: int = Query(default=50, ge=1, le=100),
 	user: dict[str, Any] = Depends(get_current_user),
@@ -33,8 +37,35 @@ def list_payments(
 		if not ObjectId.is_valid(invoice_id):
 			raise HTTPException(status_code=404, detail="Invoice not found")
 		query["invoice_id"] = ObjectId(invoice_id)
+	if status:
+		query["status"] = status
+	if method:
+		query["method"] = method
+	if q and q.strip():
+		query["reference"] = {"$regex": re.escape(q.strip()), "$options": "i"}
 	cursor = database.payments.find(query).sort("recorded_at", -1).skip((page - 1) * page_size).limit(page_size)
 	return {"items": [serialize_document(item) for item in cursor], "page": page, "page_size": page_size}
+
+
+@router.get("/{payment_id}")
+def get_payment(
+	payment_id: str,
+	request: Request,
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	if not ObjectId.is_valid(payment_id):
+		raise HTTPException(status_code=404, detail="Payment not found")
+	database = request.app.state.mongo.database
+	payment = database.payments.find_one({"_id": ObjectId(payment_id)})
+	if not payment:
+		raise HTTPException(status_code=404, detail="Payment not found")
+	if user.get("role") == UserRole.CUSTOMER.value:
+		customer = get_customer_for_user(database, user)
+		if payment["customer_id"] != customer["_id"]:
+			raise HTTPException(status_code=404, detail="Payment not found")
+	else:
+		require_business_permission(user, "payments:read")
+	return serialize_document(payment)
 
 
 @router.get("/invoices/{invoice_id}")

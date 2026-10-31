@@ -37,3 +37,17 @@ class InvoiceConfirmRequest(BaseModel):
 		if value is not None and value.tzinfo is None:
 			raise ValueError("due_at must be timezone-aware")
 		return value
+
+
+class InvoiceUpdate(BaseModel):
+	model_config = ConfigDict(extra="forbid")
+
+	due_at: datetime | None = None
+	notes: str | None = Field(default=None, max_length=2000)
+
+	@field_validator("due_at")
+	@classmethod
+	def require_timezone(cls, value: datetime | None) -> datetime | None:
+		if value is not None and value.tzinfo is None:
+			raise ValueError("due_at must be timezone-aware")
+		return value

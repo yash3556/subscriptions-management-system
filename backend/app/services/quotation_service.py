@@ -24,7 +24,12 @@ def build_quotation_lines(database: Any, requested_lines: list[dict[str, Any]]) 
             variant = None
             if requested.get("variant_id"):
                 variant = next(
-                    (item for item in product.get("variants", []) if item["id"] == requested["variant_id"]),
+                    (
+                        item
+                        for item in product.get("variants", [])
+                        if item["id"] == requested["variant_id"]
+                        and item.get("is_active", True)
+                    ),
                     None,
                 )
                 if variant is None:
@@ -59,6 +64,7 @@ def build_quotation_lines(database: Any, requested_lines: list[dict[str, Any]]) 
                 "plan_id": plan["_id"],
                 "plan_name": plan["name"],
                 "frequency": plan["frequency"],
+                "lifecycle_options": plan.get("lifecycle_options", {}),
                 "quantity": quantity,
                 "unit_price_paise": plan["price_paise"],
                 "tax_rate_bps": plan.get("tax_rate_bps", 0),
@@ -79,6 +85,7 @@ def create_quotation(
     requested_lines: list[dict[str, Any]],
     validity_days: int,
     created_by: ObjectId,
+    notes: str | None = None,
 ) -> dict[str, Any]:
     now = now_utc()
     lines = build_quotation_lines(database, requested_lines)
@@ -95,7 +102,9 @@ def create_quotation(
         "status": "quotation",
         "customer_accepted_at": None,
         "confirmed_at": None,
+        "notes": notes,
         "created_by": created_by,
+        "history": [{"status": "quotation", "at": now, "actor_id": created_by}],
         "created_at": now,
         "updated_at": now,
     }

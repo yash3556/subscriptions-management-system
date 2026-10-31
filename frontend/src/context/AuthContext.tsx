@@ -60,6 +60,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void retrySession();
   }, [retrySession]);
 
+  useEffect(() => {
+    function handleExpiredSession() {
+      setAccessToken(null);
+      setUser(null);
+      setStatus("anonymous");
+      setError(null);
+    }
+    window.addEventListener("brightloop:session-expired", handleExpiredSession);
+    return () =>
+      window.removeEventListener("brightloop:session-expired", handleExpiredSession);
+  }, []);
+
   const signIn = useCallback(async (email: string, password: string) => {
     const authenticatedUser = await authenticate({ email, password });
     setUser(authenticatedUser);

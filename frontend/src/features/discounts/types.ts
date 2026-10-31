@@ -15,6 +15,7 @@ export interface DiscountFormValues {
 }
 
 export interface DiscountRecord {
+  id: string;
   name: string;
   type: DiscountType;
   value: number;
@@ -25,4 +26,7 @@ export interface DiscountRecord {
   usageLimit?: number;
   target: DiscountTarget;
   eligibleProducts: string[];
+  eligibleProductIds: string[];
+  isActive: boolean;
+  usedCount: number;
 }

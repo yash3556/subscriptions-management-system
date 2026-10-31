@@ -69,7 +69,7 @@ def create_indexes(database: Database) -> None:
                 sparse=True,
                 name="uq_customers_user_id",
             ),
-            IndexModel([("email", ASCENDING)], name="ix_customers_email"),
+            IndexModel([("email", ASCENDING)], unique=True, name="uq_customers_email"),
         ]
     )
     database.products.create_indexes(
@@ -96,6 +96,7 @@ def create_indexes(database: Database) -> None:
             IndexModel([("quotation_id", ASCENDING)], unique=True, sparse=True, name="uq_subscriptions_quotation"),
             IndexModel([("customer_id", ASCENDING), ("status", ASCENDING)], name="ix_subscriptions_customer_status"),
             IndexModel([("status", ASCENDING), ("next_billing_at", ASCENDING)], name="ix_subscriptions_due"),
+            IndexModel([("status", ASCENDING), ("expires_at", ASCENDING)], name="ix_subscriptions_status_expiry"),
         ]
     )
     database.invoices.create_indexes(

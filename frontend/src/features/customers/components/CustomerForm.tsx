@@ -5,8 +5,9 @@ import type { CustomerFormValues } from "../types";
 interface CustomerFormProps {
   initialValues?: CustomerFormValues;
   submitLabel: string;
+  isSubmitting?: boolean;
   onCancel: () => void;
-  onSubmit: (values: CustomerFormValues) => void;
+  onSubmit: (values: CustomerFormValues) => void | Promise<void>;
 }
 
 const emptyValues: CustomerFormValues = {
@@ -17,12 +18,13 @@ const emptyValues: CustomerFormValues = {
 };
 
 export function CustomerForm({
-  initialValues = emptyValues,
+  initialValues,
   submitLabel,
+  isSubmitting = false,
   onCancel,
   onSubmit,
 }: CustomerFormProps) {
-  const [values, setValues] = useState(initialValues);
+  const [values, setValues] = useState(initialValues ?? emptyValues);
   const [submitted, setSubmitted] = useState(false);
 
   const nameError =
@@ -71,6 +73,7 @@ export function CustomerForm({
         label="Email"
         name="email"
         onChange={(event) => updateField("email", event.target.value)}
+        disabled={Boolean(initialValues) || isSubmitting}
         required
         type="email"
         value={values.email}
@@ -81,6 +84,7 @@ export function CustomerForm({
         label="Phone"
         name="phone"
         onChange={(event) => updateField("phone", event.target.value)}
+        disabled={isSubmitting}
         placeholder="Optional"
         type="tel"
         value={values.phone}
@@ -99,6 +103,7 @@ export function CustomerForm({
           onChange={(event) =>
             updateField("billingAddress", event.target.value)
           }
+          disabled={isSubmitting}
           placeholder="Optional"
           value={values.billingAddress}
         />
@@ -107,15 +112,17 @@ export function CustomerForm({
         <button
           className="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
           onClick={onCancel}
+          disabled={isSubmitting}
           type="button"
         >
           Cancel
         </button>
         <button
           className="rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+          disabled={isSubmitting}
           type="submit"
         >
-          {submitLabel}
+          {isSubmitting ? "Saving…" : submitLabel}
         </button>
       </div>
     </form>

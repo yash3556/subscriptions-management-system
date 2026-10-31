@@ -6,7 +6,7 @@ from typing import Any
 from app.services.business_service import now_utc
 
 
-def dashboard_summary(database: Any) -> dict[str, int]:
+def dashboard_summary(database: Any) -> dict[str, Any]:
 	payments = list(database.payments.aggregate([
 		{"$match": {"status": "recorded"}},
 		{"$group": {"_id": None, "total": {"$sum": "$amount_paise"}}},
@@ -24,10 +24,23 @@ def dashboard_summary(database: Any) -> dict[str, int]:
 		{"$count": "count"},
 	]))
 	return {
+		"total_customers": database.customers.count_documents({}),
+		"total_products": database.products.count_documents({}),
 		"active_subscriptions": database.subscriptions.count_documents({"status": "active"}),
+		"total_invoices": database.invoices.count_documents({}),
 		"collected_revenue_paise": payments[0]["total"] if payments else 0,
 		"outstanding_paise": invoices[0]["outstanding"] if invoices else 0,
 		"overdue_invoices": overdue[0]["count"] if overdue else 0,
+		"recent_transactions": list(
+			database.payments.find({"status": "recorded"})
+			.sort("recorded_at", -1)
+			.limit(5)
+		),
+		"recent_subscriptions": list(
+			database.subscriptions.find({})
+			.sort("created_at", -1)
+			.limit(5)
+		),
 	}
 
 

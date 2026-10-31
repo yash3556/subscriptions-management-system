@@ -122,6 +122,14 @@ def test_quotation_invoice_partial_payments_and_customer_ownership(
     assert quote["total_paise"] == 118_000
     assert "unit_price_paise" not in quote_response.request.content.decode()
     quote_id = quote["id"]
+    edited_quote = client.patch(
+        f"{API}/quotations/{quote_id}",
+        headers=staff_headers,
+        json={"notes": "Approved service scope"},
+    )
+    assert edited_quote.status_code == 200
+    assert edited_quote.json()["notes"] == "Approved service scope"
+    assert client.post(f"{API}/quotations/{quote_id}/send", headers=staff_headers).status_code == 200
 
     assert client.get(f"{API}/quotations/{quote_id}", headers=customer_b_headers).status_code == 404
     assert client.post(f"{API}/quotations/{quote_id}/accept", headers=customer_b_headers).status_code == 404
@@ -132,13 +140,19 @@ def test_quotation_invoice_partial_payments_and_customer_ownership(
     assert confirmed.status_code == 200
     subscription_id = confirmed.json()["id"]
     assert confirmed.json()["status"] == "confirmed"
+    history = client.get(
+        f"{API}/subscriptions/{subscription_id}/history",
+        headers=customer_a_headers,
+    )
+    assert history.status_code == 200
+    assert history.json()["items"][0]["status"] == "confirmed"
     assert client.post(
         f"{API}/subscriptions/{subscription_id}/activate",
         headers=customer_a_headers,
         json={"start_at": now.isoformat()},
     ).status_code == 403
 
-    start_at = now - timedelta(days=1)
+    start_at = now - timedelta(days=100)
     activated = client.post(
         f"{API}/subscriptions/{subscription_id}/activate",
         headers=staff_headers,
@@ -164,6 +178,10 @@ def test_quotation_invoice_partial_payments_and_customer_ownership(
     assert str(duplicate["_id"]) == invoice["id"]
     assert database.invoices.count_documents({"subscription_id": ObjectId(subscription_id)}) == 1
     assert database.discounts.find_one({"_id": ObjectId(discount_response.json()["id"])})["usage_count"] == 1
+    assert client.get(
+        f"{API}/customers/{customer_a_record['_id']}/invoices",
+        headers=customer_a_headers,
+    ).json()["items"][0]["id"] == invoice["id"]
 
     assert client.post(f"{API}/invoices/{invoice['id']}/confirm", headers=staff_headers, json={}).status_code == 200
     assert client.get(f"{API}/invoices/{invoice['id']}", headers=customer_b_headers).status_code == 404
@@ -186,6 +204,12 @@ def test_quotation_invoice_partial_payments_and_customer_ownership(
         json=payment_body,
     )
     assert repeated_payment.status_code == 200
+    conflicting_replay = client.post(
+        f"{API}/payments",
+        headers={**customer_a_headers, "Idempotency-Key": "payment-unique-001"},
+        json={**payment_body, "amount_paise": 40_001},
+    )
+    assert conflicting_replay.status_code == 409
     updated_invoice = client.get(f"{API}/invoices/{invoice['id']}", headers=customer_a_headers).json()
     assert updated_invoice["amount_paid_paise"] == 40_000
     assert updated_invoice["outstanding_paise"] == 66_200
@@ -210,3 +234,195 @@ def test_quotation_invoice_partial_payments_and_customer_ownership(
     )
     assert overpayment.status_code == 409
     assert client.post(f"{API}/subscriptions", headers=customer_a_headers, json={}).status_code == 405
+
+    recurring_run = client.post(f"{API}/invoices/run-billing", headers=admin_headers)
+    assert recurring_run.status_code == 200
+    assert recurring_run.json()["generated"] == 1
+    assert database.invoices.count_documents({"subscription_id": ObjectId(subscription_id)}) == 2
+
+    paused = client.post(f"{API}/subscriptions/{subscription_id}/pause", headers=staff_headers)
+    assert paused.status_code == 200
+    assert paused.json()["status"] == "paused"
+    assert paused.json()["next_billing_at"] is None
+    assert client.post(f"{API}/invoices/run-billing", headers=admin_headers).json()["generated"] == 0
+    resumed = client.post(f"{API}/subscriptions/{subscription_id}/resume", headers=staff_headers)
+    assert resumed.status_code == 200
+    assert resumed.json()["status"] == "active"
+    assert resumed.json()["history"][-1]["event"] == "resumed"
+
+    closed = client.post(
+        f"{API}/subscriptions/{subscription_id}/close",
+        headers=staff_headers,
+    )
+    assert closed.status_code == 200
+    assert closed.json()["status"] == "closed"
+    assert closed.json()["next_billing_at"] is None
+    after_close = client.post(f"{API}/invoices/run-billing", headers=admin_headers)
+    assert after_close.status_code == 200
+    assert after_close.json()["generated"] == 0
+    assert database.invoices.count_documents({"subscription_id": ObjectId(subscription_id)}) == 2
+    renewal_start = (now_utc() + timedelta(days=1)).replace(microsecond=0)
+    renewed = client.post(
+        f"{API}/subscriptions/{subscription_id}/renew",
+        headers=staff_headers,
+        json={"start_at": renewal_start.isoformat()},
+    )
+    assert renewed.status_code == 200
+    assert renewed.json()["status"] == "active"
+    assert datetime.fromisoformat(
+        renewed.json()["next_billing_at"].replace("Z", "+00:00")
+    ) == renewal_start
+
+    expired_at = now_utc() - timedelta(days=1)
+    expired_subscription = {
+        "number": "SUB-EXPIRED-VERIFY",
+        "customer_id": customer_a_record["_id"],
+        "status": "active",
+        "start_at": expired_at - timedelta(days=30),
+        "expires_at": expired_at,
+        "next_billing_at": expired_at,
+        "lines": [],
+        "created_at": expired_at - timedelta(days=30),
+        "updated_at": expired_at - timedelta(days=30),
+    }
+    expired_subscription_id = database.subscriptions.insert_one(expired_subscription).inserted_id
+    expiry_run = client.post(f"{API}/invoices/run-billing", headers=admin_headers)
+    assert expiry_run.status_code == 200
+    assert expiry_run.json()["generated"] == 0
+    expired = database.subscriptions.find_one({"_id": expired_subscription_id})
+    assert expired["status"] == "expired"
+    assert expired["next_billing_at"] is None
+    assert client.post(
+        f"{API}/invoices/from-subscription/{expired_subscription_id}",
+        headers=staff_headers,
+    ).status_code == 409
+
+
+def test_catalog_search_customer_crud_and_discount_management(
+    client: TestClient,
+    database,
+    settings: Settings,
+):
+    admin, admin_headers = principal(database, settings, UserRole.ADMIN)
+    staff, staff_headers = principal(
+        database,
+        settings,
+        UserRole.INTERNAL_STAFF,
+        ["customers:read", "customers:write", "products:read", "products:write", "plans:read", "plans:write"],
+    )
+    customer_response = client.post(
+        f"{API}/customers",
+        headers=admin_headers,
+        json={"name": "Searchable Customer", "email": "searchable@example.com"},
+    )
+    assert customer_response.status_code == 201, customer_response.json()
+    customer_id = customer_response.json()["id"]
+    search = client.get(
+        f"{API}/customers",
+        headers=staff_headers,
+        params={"q": "searchable@example", "page": 1, "page_size": 10},
+    )
+    assert search.status_code == 200
+    assert [item["id"] for item in search.json()["items"]] == [customer_id]
+    assert client.patch(
+        f"{API}/customers/{customer_id}",
+        headers=admin_headers,
+        json={"name": "Updated Customer"},
+    ).json()["name"] == "Updated Customer"
+
+    product = client.post(
+        f"{API}/products",
+        headers=staff_headers,
+        json={
+            "name": "Searchable Product",
+            "product_type": "service",
+            "sales_price_paise": 20_000,
+            "cost_price_paise": 10_000,
+            "variants": [
+                {"name": "Active", "price_adjustment_paise": 5_000},
+                {"name": "Retired", "price_adjustment_paise": 7_000, "is_active": False},
+            ],
+        },
+    )
+    assert product.status_code == 201
+    active_variant, retired_variant = product.json()["variants"]
+    products = client.get(
+        f"{API}/products",
+        headers=staff_headers,
+        params={"q": "searchable", "product_type": "service"},
+    )
+    assert products.status_code == 200
+    assert products.json()["items"][0]["id"] == product.json()["id"]
+
+    customer_user, customer_headers = principal(database, settings, UserRole.CUSTOMER)
+    customer_record(database, customer_user)
+    active_quote = client.post(
+        f"{API}/quotations",
+        headers=customer_headers,
+        json={"lines": [{"product_id": product.json()["id"], "variant_id": active_variant["id"], "quantity": 1}]},
+    )
+    assert active_quote.status_code == 201
+    assert active_quote.json()["lines"][0]["unit_price_paise"] == 25_000
+    inactive_quote = client.post(
+        f"{API}/quotations",
+        headers=customer_headers,
+        json={"lines": [{"product_id": product.json()["id"], "variant_id": retired_variant["id"], "quantity": 1}]},
+    )
+    assert inactive_quote.status_code == 404
+    rejected_quote = client.post(
+        f"{API}/quotations",
+        headers=customer_headers,
+        json={"lines": [{"product_id": product.json()["id"], "quantity": 1}]},
+    )
+    rejected = client.post(
+        f"{API}/quotations/{rejected_quote.json()['id']}/reject",
+        headers=customer_headers,
+    )
+    assert rejected.status_code == 200
+    assert rejected.json()["status"] == "rejected"
+
+    now = now_utc()
+    plan = client.post(
+        f"{API}/plans",
+        headers=staff_headers,
+        json={
+            "name": "Monthly searchable plan",
+            "description": "Monthly plan description",
+            "price_paise": 50_000,
+            "frequency": "monthly",
+            "available_from": (now - timedelta(days=1)).isoformat(),
+            "available_until": (now + timedelta(days=1)).isoformat(),
+            "lifecycle_options": {"allowPause": True, "allowRenewal": True},
+        },
+    )
+    assert plan.status_code == 201
+    assert client.get(
+        f"{API}/plans",
+        headers=staff_headers,
+        params={"q": "searchable", "frequency": "monthly", "available": True},
+    ).json()["items"][0]["id"] == plan.json()["id"]
+
+    discount = client.post(
+        f"{API}/discounts",
+        headers=admin_headers,
+        json={
+            "name": "Searchable discount",
+            "discount_type": "percentage",
+            "value": 500,
+            "starts_at": (now - timedelta(days=1)).isoformat(),
+            "ends_at": (now + timedelta(days=1)).isoformat(),
+            "product_ids": [product.json()["id"]],
+        },
+    )
+    assert discount.status_code == 201
+    discount_id = discount.json()["id"]
+    assert client.get(f"{API}/discounts/{discount_id}", headers=admin_headers).status_code == 200
+    assert client.patch(
+        f"{API}/discounts/{discount_id}",
+        headers=admin_headers,
+        json={"value": 20_000},
+    ).status_code == 422
+    assert client.delete(f"{API}/discounts/{discount_id}", headers=admin_headers).status_code == 204
+    assert client.get(f"{API}/discounts/{discount_id}", headers=admin_headers).json()["is_active"] is False
+
+    assert client.delete(f"{API}/customers/{customer_id}", headers=admin_headers).status_code == 204

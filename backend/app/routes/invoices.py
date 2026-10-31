@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import timezone
 from typing import Any
 
@@ -9,7 +10,7 @@ from pymongo import ReturnDocument
 
 from app.core.permissions import get_current_user, require_admin
 from app.models.user import UserRole
-from app.schemas.invoice import InvoiceConfirmRequest
+from app.schemas.invoice import InvoiceConfirmRequest, InvoiceUpdate
 from app.services.billing_service import generate_due_invoices, generate_invoice_for_subscription
 from app.services.business_service import (
 	customer_owns,
@@ -59,6 +60,9 @@ def generate_from_subscription(
 @router.get("")
 def list_invoices(
 	request: Request,
+	status: str | None = Query(default=None, pattern="^(draft|confirmed|paid|cancelled)$"),
+	q: str | None = Query(default=None, max_length=120),
+	customer_id: str | None = None,
 	page: int = Query(default=1, ge=1),
 	page_size: int = Query(default=50, ge=1, le=100),
 	user: dict[str, Any] = Depends(get_current_user),
@@ -69,6 +73,14 @@ def list_invoices(
 	else:
 		require_business_permission(user, "invoices:read")
 		query = {}
+		if customer_id:
+			if not ObjectId.is_valid(customer_id):
+				raise HTTPException(status_code=404, detail="Customer not found")
+			query["customer_id"] = ObjectId(customer_id)
+	if status:
+		query["status"] = status
+	if q and q.strip():
+		query["number"] = {"$regex": re.escape(q.strip()), "$options": "i"}
 	cursor = database.invoices.find(query).sort("created_at", -1).skip((page - 1) * page_size).limit(page_size)
 	return {"items": [_invoice_response(item) for item in cursor], "page": page, "page_size": page_size}
 
@@ -91,6 +103,36 @@ def get_invoice(
 			raise HTTPException(status_code=404, detail="Invoice not found")
 	else:
 		require_business_permission(user, "invoices:read")
+	return _invoice_response(invoice)
+
+
+@router.patch("/{invoice_id}")
+def update_invoice(
+	invoice_id: str,
+	payload: InvoiceUpdate,
+	request: Request,
+	user: dict[str, Any] = Depends(get_current_user),
+):
+	require_business_permission(user, "invoices:write")
+	if not ObjectId.is_valid(invoice_id):
+		raise HTTPException(status_code=404, detail="Invoice not found")
+	changes = payload.model_dump(exclude_unset=True)
+	if not changes:
+		raise HTTPException(status_code=422, detail="No changes supplied")
+	for key in changes:
+		if changes[key] is not None and key == "due_at":
+			changes[key] = changes[key].astimezone(timezone.utc)
+	changes["updated_at"] = now_utc()
+	database = request.app.state.mongo.database
+	invoice = database.invoices.find_one_and_update(
+		{"_id": ObjectId(invoice_id), "status": "draft"},
+		{"$set": changes},
+		return_document=ReturnDocument.AFTER,
+	)
+	if not invoice:
+		if not database.invoices.find_one({"_id": ObjectId(invoice_id)}):
+			raise HTTPException(status_code=404, detail="Invoice not found")
+		raise HTTPException(status_code=409, detail="Only draft invoices can be updated")
 	return _invoice_response(invoice)
 
 

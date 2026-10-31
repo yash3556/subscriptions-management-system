@@ -8,8 +8,9 @@ interface PlanFormDialogProps {
   submitLabel: string;
   plan?: PlanRecord;
   notice?: string;
+  isSubmitting?: boolean;
   onClose: () => void;
-  onSubmit: (values: PlanFormValues) => void;
+  onSubmit: (values: PlanFormValues) => void | Promise<void>;
 }
 
 export function PlanFormDialog({
@@ -17,6 +18,7 @@ export function PlanFormDialog({
   submitLabel,
   plan,
   notice,
+  isSubmitting,
   onClose,
   onSubmit,
 }: PlanFormDialogProps) {
@@ -75,6 +77,7 @@ export function PlanFormDialog({
         )}
         <PlanForm
           initialPlan={plan}
+          isSubmitting={isSubmitting}
           onCancel={onClose}
           onSubmit={onSubmit}
           submitLabel={submitLabel}

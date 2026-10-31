@@ -2,17 +2,26 @@ import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { QuotationForm } from "./QuotationForm";
 import type { QuotationFormValues, QuotationRecord } from "../types";
+import type { BusinessRecord } from "../../../services/businessService";
 
 interface QuotationDialogProps {
   quotation?: QuotationRecord;
+  customers: BusinessRecord[];
+  products: BusinessRecord[];
+  plans: BusinessRecord[];
   notice?: string;
+  isSubmitting?: boolean;
   onClose: () => void;
-  onSubmit: (values: QuotationFormValues) => void;
+  onSubmit: (values: QuotationFormValues) => void | Promise<void>;
 }
 
 export function QuotationDialog({
   quotation,
+  customers,
+  products,
+  plans,
   notice,
+  isSubmitting,
   onClose,
   onSubmit,
 }: QuotationDialogProps) {
@@ -41,10 +50,10 @@ export function QuotationDialog({
       <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
         <div>
           <h2 className="text-lg font-semibold" id="quotation-dialog-title">
-            Create quotation
+            {quotation ? "Edit quotation" : "Create quotation"}
           </h2>
           <p className="mt-1 text-sm text-slate-600">
-            Start with a quotation template and its product or plan lines.
+            Add customer-approved catalog items and validity details.
           </p>
         </div>
         <button
@@ -66,9 +75,13 @@ export function QuotationDialog({
           </p>
         )}
         <QuotationForm
+          customers={customers}
           initialQuotation={quotation}
+          isSubmitting={isSubmitting}
           onCancel={onClose}
           onSubmit={onSubmit}
+          products={products}
+          plans={plans}
         />
       </div>
     </dialog>

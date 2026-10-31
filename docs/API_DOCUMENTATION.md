@@ -178,7 +178,7 @@ Customer ownership helper `ensure_customer_owns_resource(...)` returns 404 for
 another customer's resource. Future invoice, subscription, payment, and other
 customer-resource routes must call it after loading each resource.
 
-## Frontend integration status
+## Historical frontend integration status (superseded)
 
 The frontend Axios client uses `VITE_API_BASE_URL` (default
 `http://localhost:8000/api/v1`), sends credentials, and keeps the access token
@@ -198,3 +198,8 @@ subscription, invoice, payment, discount, dashboard, and report endpoints and
 their business response schemas are not implemented yet. In particular, the
 Customer Portal cannot load subscriptions, invoices, or payments until
 customer-specific endpoints and their ownership enforcement are implemented.
+
+The business API has since been implemented. The current endpoint contract and
+frontend integration caveat are documented in
+[`BUSINESS_API.md`](./BUSINESS_API.md); use that document instead of the
+historical statements above.

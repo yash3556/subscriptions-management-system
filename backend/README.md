@@ -1,8 +1,9 @@
 # Brightloop Subscription Management API
 
-The backend provides the FastAPI foundation and Phase 2 authentication, role
-management, staff administration, and authorization helpers. Subscription and
-other business APIs are not implemented in this phase.
+The backend is a FastAPI service for subscription and recurring billing
+management. It includes authentication and staff authorization, customer and
+catalog management, quotations, subscriptions, invoices, discounts, payments,
+and billing analytics.
 
 ## Requirements
 
@@ -68,6 +69,37 @@ The authentication API is mounted at `/api/v1/auth`; staff administration is at
 for request/response examples, cookie/CSRF behavior, permissions, and frontend
 integration requirements. OpenAPI includes the request and response schemas.
 
+## Business workflows
+
+Business endpoints are mounted under `/api/v1`. The main sales-to-payment flow
+is:
+
+1. A customer or authorized staff member creates a quotation.
+2. The customer accepts it; authorized staff confirms it, creating one
+   subscription for that quotation.
+3. Authorized staff activates the subscription. Its start time becomes the
+   first billing date.
+4. The billing worker generates due invoices. Invoices start as drafts and
+   authorized staff confirms them before payment.
+5. Customers can make partial payments against their own confirmed invoices.
+   The API reports the outstanding balance and marks an invoice paid when the
+   balance reaches zero. `Idempotency-Key` prevents a retried payment from
+   being applied twice.
+
+The billing worker runs periodically while the API is running. Subscription
+activation, manual closure, and expiration are supported; closure or expiration
+clears the next billing date. Recurring billing and payment reconciliation use
+MongoDB-backed records and indexes to prevent duplicate invoices and payments.
+
+## Email delivery
+
+SMTP is used for password-reset email only. Set `SMTP_HOST`, `SMTP_PORT`,
+`SMTP_FROM_EMAIL`, and, when required by the server, `SMTP_USERNAME` and
+`SMTP_PASSWORD`. Delivery is performed in a background task; configure a
+reachable SMTP server and verify delivery in the target environment before
+relying on it. The automated tests mock delivery and do not validate a real
+SMTP server.
+
 Create the first administrator interactively after configuring `.env` and
 starting MongoDB:
 
@@ -85,10 +117,13 @@ without the recipient, reset token, message, or SMTP credentials.
 
 ## Tests
 
+Run from the `backend` directory with its virtual environment activated:
+
 ```powershell
 python -m pytest
 ```
 
 Tests use an isolated in-memory Mongo-compatible database and do not require a
-live database. Use `/health/ready` to verify connectivity to the configured
-MongoDB instance.
+live database. They verify application behavior, not connectivity to a
+deployed MongoDB or SMTP service. Use `/health/ready` to verify connectivity to
+the configured MongoDB instance.

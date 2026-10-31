@@ -26,7 +26,7 @@ export function InvoiceTable({ invoices, onView }: InvoiceTableProps) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {invoices.map((invoice) => (
-              <tr className="text-slate-700" key={invoice.number}>
+              <tr className="text-slate-700" key={invoice.id}>
                 <th className="px-5 py-4 font-medium text-slate-900" scope="row">
                   {invoice.number}
                 </th>
@@ -60,8 +60,7 @@ export function InvoiceTable({ invoices, onView }: InvoiceTableProps) {
                       No invoices available
                     </p>
                     <p className="mt-1 text-sm leading-5 text-slate-500">
-                      Invoices generated from subscriptions will appear here
-                      when backend billing is connected.
+                      Generated subscription invoices appear here.
                     </p>
                   </div>
                 </td>

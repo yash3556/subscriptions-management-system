@@ -4,6 +4,7 @@ import { ProductActions } from "./ProductActions";
 
 interface ProductTableProps {
   products: ProductRecord[];
+  canWrite?: boolean;
   onView: (product: ProductRecord) => void;
   onEdit: (product: ProductRecord) => void;
   onDelete: (product: ProductRecord) => void;
@@ -17,6 +18,7 @@ function formatPrice(value: number) {
 
 export function ProductTable({
   products,
+  canWrite = false,
   onView,
   onEdit,
   onDelete,
@@ -71,6 +73,7 @@ export function ProductTable({
                 </td>
                 <td className="px-5 py-3">
                   <ProductActions
+                    canWrite={canWrite}
                     onDelete={() => onDelete(product)}
                     onEdit={() => onEdit(product)}
                     onView={() => onView(product)}
@@ -89,7 +92,7 @@ export function ProductTable({
                       No product records available
                     </p>
                     <p className="mt-1 text-sm leading-5 text-slate-500">
-                      Products will appear here when product data is connected.
+                      Add a product to get started.
                     </p>
                   </div>
                 </td>

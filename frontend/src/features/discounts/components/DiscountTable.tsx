@@ -4,9 +4,10 @@ import type { DiscountRecord } from "../types";
 interface DiscountTableProps {
   discounts: DiscountRecord[];
   onEdit: (discount: DiscountRecord) => void;
+  onDeactivate: (discount: DiscountRecord) => void;
 }
 
-export function DiscountTable({ discounts, onEdit }: DiscountTableProps) {
+export function DiscountTable({ discounts, onEdit, onDeactivate }: DiscountTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
       <div className="overflow-x-auto">
@@ -20,14 +21,16 @@ export function DiscountTable({ discounts, onEdit }: DiscountTableProps) {
               <th className="px-5 py-3.5" scope="col">Starts</th>
               <th className="px-5 py-3.5" scope="col">Ends</th>
               <th className="px-5 py-3.5 text-right" scope="col">Usage limit</th>
+              <th className="px-5 py-3.5 text-right" scope="col">Used</th>
+              <th className="px-5 py-3.5" scope="col">Status</th>
               <th className="px-5 py-3.5" scope="col">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {discounts.map((discount, index) => (
-              <tr className="text-slate-700" key={`${discount.name}-${index}`}>
+            {discounts.map((discount) => (
+              <tr className="text-slate-700" key={discount.id}>
                 <th className="px-5 py-4 font-medium text-slate-900" scope="row">
                   {discount.name}
                 </th>
@@ -48,20 +51,22 @@ export function DiscountTable({ discounts, onEdit }: DiscountTableProps) {
                 <td className="px-5 py-4 text-right">
                   {discount.usageLimit ?? "—"}
                 </td>
-                <td className="px-5 py-3 text-right">
-                  <button
+                  <td className="px-5 py-4 text-right">{discount.usedCount}</td>
+                  <td className="px-5 py-4">{discount.isActive ? "Active" : "Inactive"}</td>
+                  <td className="px-5 py-3 text-right">
+                    {discount.isActive && <><button
                     className="rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
                     onClick={() => onEdit(discount)}
                     type="button"
                   >
                     Edit
-                  </button>
+                  </button><button className="ml-1 rounded-md px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50" onClick={() => onDeactivate(discount)} type="button">Disable</button></>}
                 </td>
               </tr>
             ))}
             {discounts.length === 0 && (
               <tr>
-                <td className="px-5 py-14 text-center" colSpan={8}>
+                <td className="px-5 py-14 text-center" colSpan={10}>
                   <div className="mx-auto flex max-w-sm flex-col items-center">
                     <span className="mb-3 rounded-full bg-slate-100 p-3 text-slate-500">
                       <Percent aria-hidden="true" size={22} />

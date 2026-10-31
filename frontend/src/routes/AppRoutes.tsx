@@ -25,6 +25,8 @@ import { PortalLayout } from "../features/portal/components/PortalLayout";
 import { PortalOverviewPage } from "../features/portal/pages/PortalOverviewPage";
 import { PortalSubscriptionsPage } from "../features/portal/pages/PortalSubscriptionsPage";
 import { PortalInvoicesPage } from "../features/portal/pages/PortalInvoicesPage";
+import { PortalQuotationsPage } from "../features/portal/pages/PortalQuotationsPage";
+import { PortalPaymentsPage } from "../features/portal/pages/PortalPaymentsPage";
 import { RequireCustomer } from "../features/auth/components/RequireCustomer";
 import {
   AccessDenied,
@@ -63,6 +65,8 @@ export function AppRoutes() {
         <Route index element={<PortalOverviewPage />} />
         <Route path="subscriptions" element={<PortalSubscriptionsPage />} />
         <Route path="invoices" element={<PortalInvoicesPage />} />
+        <Route path="payments" element={<PortalPaymentsPage />} />
+        <Route path="quotations" element={<PortalQuotationsPage />} />
       </Route>
       <Route
         path="/app"
@@ -128,7 +132,7 @@ export function AppRoutes() {
           />
         ))}
         <Route
-          path="customers/details"
+          path="customers/details/:customerId"
           element={
             <RequireInternal permission="customers:read">
               <CustomerDetailsPage />
@@ -136,7 +140,7 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="products/details"
+          path="products/details/:productId"
           element={
             <RequireInternal permission="products:read">
               <ProductDetailsPage />
@@ -144,7 +148,7 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="plans/details"
+          path="plans/details/:planId"
           element={
             <RequireInternal permission="plans:read">
               <PlanDetailsPage />
@@ -152,7 +156,7 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="subscriptions/details"
+          path="subscriptions/details/:subscriptionId"
           element={
             <RequireInternal permission="subscriptions:read">
               <SubscriptionDetailsPage />
@@ -160,7 +164,7 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="invoices/details"
+          path="invoices/details/:invoiceId"
           element={
             <RequireInternal permission="invoices:read">
               <InvoiceDetailsPage />
@@ -170,7 +174,8 @@ export function AppRoutes() {
         <Route path="no-access" element={<AccessDenied />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
-      <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
+     <Route path="/" element={<LoginPage />} />
+      {/* <Route path="/" element={<Navigate to="/app/dashboard" replace />} /> */}
       <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
     </Routes>
   );

@@ -1,11 +1,13 @@
-import { Eye, Pencil } from "lucide-react";
+import { Eye, Pencil, Power } from "lucide-react";
 
 interface PlanActionsProps {
+  canWrite?: boolean;
   onView: () => void;
   onEdit: () => void;
+  onDeactivate: () => void;
 }
 
-export function PlanActions({ onView, onEdit }: PlanActionsProps) {
+export function PlanActions({ canWrite = false, onView, onEdit, onDeactivate }: PlanActionsProps) {
   return (
     <div className="flex items-center gap-1">
       <button
@@ -16,7 +18,7 @@ export function PlanActions({ onView, onEdit }: PlanActionsProps) {
       >
         <Eye aria-hidden="true" size={17} />
       </button>
-      <button
+      {canWrite && <button
         aria-label="Edit plan"
         className="rounded-md p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-blue-700"
         onClick={onEdit}
@@ -24,6 +26,15 @@ export function PlanActions({ onView, onEdit }: PlanActionsProps) {
       >
         <Pencil aria-hidden="true" size={17} />
       </button>
+      }
+      {canWrite && <button
+        aria-label="Deactivate plan"
+        className="rounded-md p-2 text-red-600 hover:bg-red-50"
+        onClick={onDeactivate}
+        type="button"
+      >
+        <Power aria-hidden="true" size={17} />
+      </button>}
     </div>
   );
 }

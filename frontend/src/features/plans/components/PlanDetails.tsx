@@ -47,11 +47,10 @@ export function PlanDetails({ plan }: PlanDetailsProps) {
     return (
       <section className="rounded-lg border border-slate-200 bg-white p-6">
         <h2 className="text-lg font-semibold text-slate-900">
-          Plan details unavailable
+          Plan record unavailable
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Plan details are not available in this navigation state. Plan records
-          will be connected after backend integration.
+          The plan could not be loaded. Return to the plan list and try again.
         </p>
       </section>
     );

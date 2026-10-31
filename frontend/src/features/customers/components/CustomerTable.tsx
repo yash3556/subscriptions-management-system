@@ -4,8 +4,10 @@ import { CustomerActions } from "./CustomerActions";
 
 interface CustomerTableProps {
   customers: CustomerSummary[];
+  canWrite?: boolean;
   onView: (customer: CustomerSummary) => void;
   onEdit: (customer: CustomerSummary) => void;
+  onDelete: (customer: CustomerSummary) => void;
 }
 
 function formatCreatedDate(date: string | undefined) {
@@ -20,8 +22,10 @@ function formatCreatedDate(date: string | undefined) {
 
 export function CustomerTable({
   customers,
+  canWrite = false,
   onView,
   onEdit,
+  onDelete,
 }: CustomerTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
@@ -50,7 +54,7 @@ export function CustomerTable({
             {customers.map((customer, index) => (
               <tr
                 className="text-slate-700 hover:bg-slate-50"
-                key={`${customer.createdAt ?? ""}-${customer.email}-${index}`}
+                key={customer.id || `${customer.email}-${index}`}
               >
                 <th
                   className="whitespace-nowrap px-5 py-4 font-medium text-slate-900"
@@ -69,6 +73,8 @@ export function CustomerTable({
                 </td>
                 <td className="px-5 py-3">
                   <CustomerActions
+                    canWrite={canWrite}
+                    onDelete={() => onDelete(customer)}
                     onEdit={() => onEdit(customer)}
                     onView={() => onView(customer)}
                   />
@@ -86,8 +92,7 @@ export function CustomerTable({
                       No customer records available
                     </p>
                     <p className="mt-1 text-sm leading-5 text-slate-500">
-                      Customer records will appear here when the backend
-                      integration is available.
+                      Add a customer to get started.
                     </p>
                   </div>
                 </td>

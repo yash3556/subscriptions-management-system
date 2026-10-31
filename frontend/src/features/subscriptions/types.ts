@@ -1,9 +1,11 @@
 export type SubscriptionStatus =
-  | "Draft"
-  | "Quotation"
-  | "Confirmed"
-  | "Active"
-  | "Closed";
+  | "draft"
+  | "quotation"
+  | "confirmed"
+  | "active"
+  | "paused"
+  | "closed"
+  | "expired";
 
 export interface SubscriptionLine {
   product: string;
@@ -30,6 +32,7 @@ export interface SubscriptionFormValues {
 }
 
 export interface SubscriptionRecord {
+  id: string;
   number: string;
   customer: string;
   plan: string;
@@ -37,5 +40,6 @@ export interface SubscriptionRecord {
   expiryDate: string;
   paymentTerms: string;
   status: SubscriptionStatus;
+  nextBillingDate: string;
   lines: SubscriptionLine[];
 }

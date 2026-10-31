@@ -9,8 +9,9 @@ import type {
 interface ProductFormProps {
   initialProduct?: ProductRecord;
   submitLabel: string;
+  isSubmitting?: boolean;
   onCancel: () => void;
-  onSubmit: (values: ProductFormValues) => void;
+  onSubmit: (values: ProductFormValues) => void | Promise<void>;
 }
 
 const emptyValues: ProductFormValues = {
@@ -18,6 +19,7 @@ const emptyValues: ProductFormValues = {
   type: "",
   salesPrice: "",
   costPrice: "",
+  taxRate: "0",
   notes: "",
   variants: [],
 };
@@ -30,6 +32,7 @@ function toFormValues(product?: ProductRecord): ProductFormValues {
     type: product.type,
     salesPrice: String(product.salesPrice),
     costPrice: String(product.costPrice),
+    taxRate: String(product.taxRateBps / 100),
     notes: product.notes ?? "",
     variants: product.variants.map((variant) => ({
       attribute: variant.attribute,
@@ -53,7 +56,9 @@ interface FieldProps {
   type?: "text" | "number";
   placeholder?: string;
   min?: string;
+  max?: string;
   step?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }
 
@@ -65,7 +70,9 @@ function ProductField({
   type = "text",
   placeholder,
   min,
+  max,
   step,
+  disabled,
   onChange,
 }: FieldProps) {
   const errorId = `${id}-error`;
@@ -87,7 +94,9 @@ function ProductField({
             : "border-slate-300 focus:border-blue-600 focus:ring-blue-100"
         }`}
         id={id}
+        disabled={disabled}
         min={min}
+        max={max}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         step={step}
@@ -106,6 +115,7 @@ function ProductField({
 export function ProductForm({
   initialProduct,
   submitLabel,
+  isSubmitting = false,
   onCancel,
   onSubmit,
 }: ProductFormProps) {
@@ -123,6 +133,11 @@ export function ProductForm({
   const costPriceError =
     submitted && !isNonNegativeNumber(values.costPrice)
       ? "Enter a valid non-negative cost price."
+      : "";
+  const taxRateError =
+    submitted &&
+    (!isNonNegativeNumber(values.taxRate) || Number(values.taxRate) > 100)
+      ? "Enter a tax rate from 0% to 100%."
       : "";
 
   function updateField(
@@ -179,6 +194,8 @@ export function ProductForm({
       !values.type.trim() ||
       !isNonNegativeNumber(values.salesPrice) ||
       !isNonNegativeNumber(values.costPrice) ||
+      !isNonNegativeNumber(values.taxRate) ||
+      Number(values.taxRate) > 100 ||
       invalidVariant
     ) {
       return;
@@ -212,6 +229,7 @@ export function ProductForm({
         id="product-name"
         label="Product name"
         onChange={(value) => updateField("name", value)}
+        disabled={isSubmitting}
         value={values.name}
       />
       <ProductField
@@ -219,6 +237,7 @@ export function ProductForm({
         id="product-type"
         label="Product type"
         onChange={(value) => updateField("type", value)}
+        disabled={isSubmitting}
         placeholder="Enter product type"
         value={values.type}
       />
@@ -229,6 +248,7 @@ export function ProductForm({
           label="Sales price"
           min="0"
           onChange={(value) => updateField("salesPrice", value)}
+          disabled={isSubmitting}
           step="0.01"
           type="number"
           value={values.salesPrice}
@@ -239,11 +259,24 @@ export function ProductForm({
           label="Cost price"
           min="0"
           onChange={(value) => updateField("costPrice", value)}
+          disabled={isSubmitting}
           step="0.01"
           type="number"
           value={values.costPrice}
         />
       </div>
+      <ProductField
+        error={taxRateError}
+        id="product-tax-rate"
+        label="Tax rate (%)"
+        min="0"
+        max="100"
+        onChange={(value) => updateField("taxRate", value)}
+        disabled={isSubmitting}
+        step="0.01"
+        type="number"
+        value={values.taxRate}
+      />
       <div>
         <label
           className="mb-1.5 block text-sm font-medium text-slate-700"
@@ -255,6 +288,7 @@ export function ProductForm({
           className="block min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
           id="product-notes"
           onChange={(event) => updateField("notes", event.target.value)}
+          disabled={isSubmitting}
           value={values.notes}
         />
       </div>
@@ -277,6 +311,7 @@ export function ProductForm({
           <button
             className="inline-flex items-center justify-center gap-1.5 self-start rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 sm:self-auto"
             onClick={addVariant}
+            disabled={isSubmitting}
             type="button"
           >
             <Plus aria-hidden="true" size={16} />
@@ -302,6 +337,7 @@ export function ProductForm({
                   onChange={(value) =>
                     updateVariant(index, "attribute", value)
                   }
+                  disabled={isSubmitting}
                   placeholder="e.g. Brand"
                   value={variant.attribute}
                 />
@@ -310,6 +346,7 @@ export function ProductForm({
                   id={`variant-value-${index}`}
                   label="Value"
                   onChange={(value) => updateVariant(index, "value", value)}
+                  disabled={isSubmitting}
                   placeholder="e.g. Odoo"
                   value={variant.value}
                 />
@@ -321,6 +358,7 @@ export function ProductForm({
                   onChange={(value) =>
                     updateVariant(index, "additionalPrice", value)
                   }
+                  disabled={isSubmitting}
                   step="0.01"
                   type="number"
                   value={variant.additionalPrice}
@@ -329,6 +367,7 @@ export function ProductForm({
                   aria-label={`Remove variant ${index + 1}`}
                   className="mt-6 inline-flex size-10 items-center justify-center self-start rounded-md text-slate-500 hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-red-700"
                   onClick={() => removeVariant(index)}
+                  disabled={isSubmitting}
                   type="button"
                 >
                   <Trash2 aria-hidden="true" size={17} />
@@ -342,15 +381,17 @@ export function ProductForm({
         <button
           className="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
           onClick={onCancel}
+          disabled={isSubmitting}
           type="button"
         >
           Cancel
         </button>
         <button
           className="rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+          disabled={isSubmitting}
           type="submit"
         >
-          {submitLabel}
+          {isSubmitting ? "Saving…" : submitLabel}
         </button>
       </div>
     </form>

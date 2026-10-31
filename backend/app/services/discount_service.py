@@ -116,7 +116,7 @@ def apply_discount_for_period(
 def rollback_discount_claim(database: Any, discount_id: str | None, *, subscription_id: Any, billing_period_start: datetime) -> None:
 	if not discount_id:
 		return
-		database.discount_redemptions.delete_one(
+	database.discount_redemptions.delete_one(
 		{"discount_id": ObjectId(discount_id), "subscription_id": subscription_id, "billing_period_start": billing_period_start}
 	)
 	database.discounts.update_one(

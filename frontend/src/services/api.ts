@@ -23,3 +23,22 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (
+      axios.isAxiosError(error) &&
+      error.response?.status === 401 &&
+      accessToken &&
+      typeof window !== "undefined" &&
+      !/\/auth\/(login|refresh|register|forgot-password|reset-password)(?:\?|$)/.test(
+        error.config?.url ?? "",
+      )
+    ) {
+      accessToken = null;
+      window.dispatchEvent(new Event("brightloop:session-expired"));
+    }
+    return Promise.reject(error);
+  },
+);

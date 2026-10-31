@@ -16,11 +16,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     return (
       <section className="rounded-lg border border-slate-200 bg-white p-6">
         <h2 className="text-lg font-semibold text-slate-900">
-          Product details unavailable
+          Product record unavailable
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Product details are not available in this navigation state. Product
-          records will be connected after backend integration.
+          The product could not be loaded. Return to the product list and try again.
         </p>
       </section>
     );
@@ -44,6 +43,21 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                 Product name
               </dt>
               <dd className="mt-1 text-sm text-slate-900">{product.name}</dd>
+            </div>
+            <div className="flex gap-3">
+              <CircleDollarSign
+                aria-hidden="true"
+                className="mt-0.5 shrink-0 text-slate-400"
+                size={18}
+              />
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  Tax rate
+                </dt>
+                <dd className="mt-1 text-sm tabular-nums text-slate-900">
+                  {(product.taxRateBps / 100).toFixed(2)}%
+                </dd>
+              </div>
             </div>
           </div>
           <div className="flex gap-3">

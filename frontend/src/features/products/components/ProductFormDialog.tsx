@@ -8,8 +8,9 @@ interface ProductFormDialogProps {
   submitLabel: string;
   product?: ProductRecord;
   notice?: string;
+  isSubmitting?: boolean;
   onClose: () => void;
-  onSubmit: (values: ProductFormValues) => void;
+  onSubmit: (values: ProductFormValues) => void | Promise<void>;
 }
 
 export function ProductFormDialog({
@@ -17,6 +18,7 @@ export function ProductFormDialog({
   submitLabel,
   product,
   notice,
+  isSubmitting,
   onClose,
   onSubmit,
 }: ProductFormDialogProps) {
@@ -75,6 +77,7 @@ export function ProductFormDialog({
         )}
         <ProductForm
           initialProduct={product}
+          isSubmitting={isSubmitting}
           onCancel={onClose}
           onSubmit={onSubmit}
           submitLabel={submitLabel}

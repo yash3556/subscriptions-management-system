@@ -4,8 +4,9 @@ import type { BillingFrequency, PlanFormValues, PlanRecord } from "../types";
 interface PlanFormProps {
   initialPlan?: PlanRecord;
   submitLabel: string;
+  isSubmitting?: boolean;
   onCancel: () => void;
-  onSubmit: (values: PlanFormValues) => void;
+  onSubmit: (values: PlanFormValues) => void | Promise<void>;
 }
 
 const emptyValues: PlanFormValues = {
@@ -157,6 +158,7 @@ const frequencyOptions: { value: BillingFrequency; label: string }[] = [
 export function PlanForm({
   initialPlan,
   submitLabel,
+  isSubmitting = false,
   onCancel,
   onSubmit,
 }: PlanFormProps) {
@@ -200,6 +202,7 @@ export function PlanForm({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
     setSubmitted(true);
 
     if (
@@ -351,15 +354,17 @@ export function PlanForm({
         <button
           className="rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
           onClick={onCancel}
+          disabled={isSubmitting}
           type="button"
         >
           Cancel
         </button>
         <button
           className="rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+          disabled={isSubmitting}
           type="submit"
         >
-          {submitLabel}
+          {isSubmitting ? "Saving…" : submitLabel}
         </button>
       </div>
     </form>

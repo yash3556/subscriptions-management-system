@@ -4,12 +4,14 @@ import type { ProductRecord } from "../types";
 
 interface ProductDeleteDialogProps {
   product: ProductRecord;
+  isDeleting?: boolean;
   onClose: () => void;
   onConfirm: () => void;
 }
 
 export function ProductDeleteDialog({
   product,
+  isDeleting = false,
   onClose,
   onConfirm,
 }: ProductDeleteDialogProps) {
@@ -45,14 +47,15 @@ export function ProductDeleteDialog({
             Delete product?
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            This is a UI-only action. Product deletion is unavailable until
-            backend integration.
+            The product will be deactivated and will no longer be available for
+            new quotations.
           </p>
         </div>
         <button
           aria-label="Close delete dialog"
           className="rounded-md p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-blue-700"
           onClick={onClose}
+          disabled={isDeleting}
           type="button"
         >
           <X aria-hidden="true" size={18} />
@@ -71,9 +74,10 @@ export function ProductDeleteDialog({
           <button
             className="rounded-md bg-red-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
             onClick={onConfirm}
+            disabled={isDeleting}
             type="button"
           >
-            Continue
+            {isDeleting ? "Deactivating…" : "Deactivate product"}
           </button>
         </div>
       </div>

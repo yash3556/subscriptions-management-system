@@ -9,7 +9,7 @@ interface SubscriptionTableProps {
 
 function formatDate(value: string) {
   if (!value) return "—";
-  const date = new Date(`${value}T00:00:00`);
+  const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
     date,
@@ -42,6 +42,9 @@ export function SubscriptionTable({
                 Expiry date
               </th>
               <th className="px-5 py-3.5" scope="col">
+                Next billing
+              </th>
+              <th className="px-5 py-3.5" scope="col">
                 Status
               </th>
               <th className="px-5 py-3.5" scope="col">
@@ -51,13 +54,16 @@ export function SubscriptionTable({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {subscriptions.map((subscription) => (
-              <tr className="text-slate-700" key={subscription.number}>
+              <tr className="text-slate-700"               key={subscription.id}>
                 <th
                   className="whitespace-nowrap px-5 py-4 font-medium text-slate-900"
                   scope="row"
                 >
                   {subscription.number}
                 </th>
+                <td className="whitespace-nowrap px-5 py-4">
+                  {formatDate(subscription.nextBillingDate)}
+                </td>
                 <td className="whitespace-nowrap px-5 py-4">
                   {subscription.customer}
                 </td>
@@ -86,7 +92,7 @@ export function SubscriptionTable({
             ))}
             {subscriptions.length === 0 && (
               <tr>
-                <td className="px-5 py-14 text-center" colSpan={7}>
+                <td className="px-5 py-14 text-center" colSpan={8}>
                   <div className="mx-auto flex max-w-sm flex-col items-center">
                     <span className="mb-3 rounded-full bg-slate-100 p-3 text-slate-500">
                       <Repeat aria-hidden="true" size={22} />
@@ -95,8 +101,7 @@ export function SubscriptionTable({
                       No subscriptions available
                     </p>
                     <p className="mt-1 text-sm leading-5 text-slate-500">
-                      Subscription records will appear here when the backend is
-                      connected.
+                      Convert an accepted quotation to create a subscription.
                     </p>
                   </div>
                 </td>

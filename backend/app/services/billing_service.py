@@ -19,6 +19,15 @@ def generate_invoice_for_subscription(database: Any, subscription: dict[str, Any
 	if subscription.get("status") != "active" or not subscription.get("next_billing_at"):
 		raise HTTPException(status_code=409, detail="Subscription is not due for billing")
 	now = now_utc()
+	if subscription.get("expires_at") and subscription["expires_at"] <= now:
+		database.subscriptions.update_one(
+			{"_id": subscription["_id"], "status": "active"},
+			{
+				"$set": {"status": "expired", "next_billing_at": None, "updated_at": now},
+				"$push": {"history": {"status": "expired", "at": now, "actor_id": None}},
+			},
+		)
+		raise HTTPException(status_code=409, detail="Subscription has expired")
 	period_start = subscription["next_billing_at"]
 	if period_start > now:
 		raise HTTPException(status_code=409, detail="Subscription is not due for billing")
@@ -130,6 +139,13 @@ def _advance_subscription(database: Any, subscription: dict[str, Any], period_st
 
 def generate_due_invoices(database: Any, *, now: datetime | None = None, limit: int = 100) -> list[dict[str, Any]]:
 	now = now or now_utc()
+	database.subscriptions.update_many(
+		{"status": "active", "expires_at": {"$lte": now}},
+		{
+			"$set": {"status": "expired", "next_billing_at": None, "updated_at": now},
+			"$push": {"history": {"status": "expired", "at": now, "actor_id": None}},
+		},
+	)
 	due = database.subscriptions.find(
 		{"status": "active", "next_billing_at": {"$lte": now}}
 	).sort("next_billing_at", 1).limit(limit)

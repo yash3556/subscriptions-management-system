@@ -9,6 +9,7 @@ export interface ProductFormValues {
   type: string;
   salesPrice: string;
   costPrice: string;
+  taxRate: string;
   notes: string;
   variants: ProductVariantFormValue[];
 }
@@ -20,10 +21,13 @@ export interface ProductVariantFormValue {
 }
 
 export interface ProductRecord {
+  id: string;
   name: string;
   type: string;
   salesPrice: number;
   costPrice: number;
+  taxRateBps: number;
+  isActive: boolean;
   notes?: string;
   variants: ProductVariant[];
 }

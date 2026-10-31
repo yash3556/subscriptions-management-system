@@ -6,9 +6,12 @@ import type {
   DiscountTarget,
   DiscountType,
 } from "../types";
+import type { BusinessRecord } from "../../../services/businessService";
 
 interface DiscountFormProps {
   initialDiscount?: DiscountRecord;
+  products: BusinessRecord[];
+  isSubmitting?: boolean;
   onCancel: () => void;
   onSubmit: (values: DiscountFormValues) => void;
 }
@@ -40,6 +43,8 @@ function isValidDate(value: string) {
 
 export function DiscountForm({
   initialDiscount,
+  products,
+  isSubmitting = false,
   onCancel,
   onSubmit,
 }: DiscountFormProps) {
@@ -64,7 +69,7 @@ export function DiscountForm({
               ? ""
               : String(initialDiscount.usageLimit),
           target: initialDiscount.target,
-          eligibleProducts: [...initialDiscount.eligibleProducts],
+          eligibleProducts: [...initialDiscount.eligibleProductIds],
         }
       : initialValues,
   );
@@ -81,8 +86,6 @@ export function DiscountForm({
     event.preventDefault();
     setSubmitted(true);
 
-    const hasMinimumCondition =
-      values.minimumPurchase !== "" || values.minimumQuantity !== "";
     const invalidThreshold =
       (values.minimumPurchase !== "" &&
         !isNonNegativeNumber(values.minimumPurchase)) ||
@@ -96,11 +99,10 @@ export function DiscountForm({
       !values.name.trim() ||
       !values.type ||
       !isNonNegativeNumber(values.value) ||
-      !hasMinimumCondition ||
       invalidThreshold ||
       !isValidDate(values.startsAt) ||
-      !isValidDate(values.endsAt) ||
-      values.endsAt < values.startsAt ||
+      (values.endsAt !== "" &&
+        (!isValidDate(values.endsAt) || values.endsAt < values.startsAt)) ||
       (values.usageLimit !== "" && !isPositiveInteger(values.usageLimit)) ||
       invalidTarget
     ) {
@@ -161,13 +163,6 @@ export function DiscountForm({
         <p className="text-xs text-slate-500">
           Enter a minimum purchase, quantity, or both if the rule requires it.
         </p>
-        {submitted &&
-          values.minimumPurchase === "" &&
-          values.minimumQuantity === "" && (
-            <p className="text-sm text-red-700" role="alert">
-              Enter a minimum purchase or minimum quantity.
-            </p>
-          )}
         <div className="grid gap-5 sm:grid-cols-2">
           <Field
             error={
@@ -218,9 +213,9 @@ export function DiscountForm({
           />
           <Field
             error={
-              submitted
+              submitted && values.endsAt !== ""
                 ? !isValidDate(values.endsAt)
-                  ? "End date is required."
+                  ? "Enter a valid end date."
                   : values.endsAt < values.startsAt
                     ? "End date must be on or after the start date."
                     : ""
@@ -281,7 +276,7 @@ export function DiscountForm({
                 className="grid gap-2 sm:grid-cols-[1fr_auto]"
                 key={index}
               >
-                <Field
+                <SelectField
                   error={productError(index)}
                   id={`discount-product-${index}`}
                   label={`Eligible product ${index + 1}`}
@@ -293,6 +288,10 @@ export function DiscountForm({
                       ),
                     )
                   }
+                  options={products.map((item) => ({
+                    value: item.id,
+                    label: typeof item.name === "string" ? item.name : item.id,
+                  }))}
                   value={product}
                 />
                 <button
@@ -335,9 +334,10 @@ export function DiscountForm({
         </button>
         <button
           className="rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+          disabled={isSubmitting}
           type="submit"
         >
-          Save discount rule
+          {isSubmitting ? "Saving…" : "Save discount rule"}
         </button>
       </div>
     </form>

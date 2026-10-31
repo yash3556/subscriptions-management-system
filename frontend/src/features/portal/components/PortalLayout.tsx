@@ -2,8 +2,10 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   FileText,
+  CreditCard,
   LayoutDashboard,
   Repeat,
+  LogOut,
 } from "lucide-react";
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -11,6 +13,8 @@ const links = [
   { label: "Overview", to: "/portal", icon: LayoutDashboard, end: true },
   { label: "My Subscription", to: "/portal/subscriptions", icon: Repeat },
   { label: "Invoices", to: "/portal/invoices", icon: FileText },
+  { label: "Payments", to: "/portal/payments", icon: CreditCard },
+  { label: "Quotations", to: "/portal/quotations", icon: FileText },
 ];
 
 export function PortalLayout() {
@@ -40,6 +44,16 @@ export function PortalLayout() {
           <span className="ml-3 border-l border-slate-200 pl-3 text-sm text-slate-500">
             Customer portal
           </span>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="hidden text-sm text-slate-600 sm:inline">{user?.name}</span>
+            <button
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              onClick={() => void handleSignOut()}
+              type="button"
+            >
+              <LogOut aria-hidden="true" size={16} /> Sign out
+            </button>
+          </div>
         </div>
       </header>
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">

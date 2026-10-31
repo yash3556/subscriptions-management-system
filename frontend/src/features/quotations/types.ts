@@ -1,17 +1,26 @@
-export type QuotationLineType = "product" | "plan";
+export type QuotationItemType = "product" | "plan";
 
 export interface QuotationLine {
-  type: QuotationLineType;
-  name: string;
+  type: QuotationItemType;
+  itemId: string;
+  variantId: string;
+  quantity: string;
 }
 
 export interface QuotationFormValues {
-  customerName: string;
-  templateName: string;
+  customerId: string;
   validityDays: string;
+  notes: string;
   lines: QuotationLine[];
 }
 
 export interface QuotationRecord extends QuotationFormValues {
-  number?: string;
+  id: string;
+  number: string;
+  customerName: string;
+  status: string;
+  totalPaise: number;
+  validUntil: string;
+  sentAt?: string;
+  customerAcceptedAt?: string;
 }

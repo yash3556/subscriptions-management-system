@@ -8,8 +8,9 @@ interface CustomerFormDialogProps {
   submitLabel: string;
   initialValues?: CustomerFormValues;
   notice?: string;
+  isSubmitting?: boolean;
   onClose: () => void;
-  onSubmit: (values: CustomerFormValues) => void;
+  onSubmit: (values: CustomerFormValues) => void | Promise<void>;
 }
 
 export function CustomerFormDialog({
@@ -17,6 +18,7 @@ export function CustomerFormDialog({
   submitLabel,
   initialValues,
   notice,
+  isSubmitting,
   onClose,
   onSubmit,
 }: CustomerFormDialogProps) {
@@ -75,6 +77,7 @@ export function CustomerFormDialog({
         )}
         <CustomerForm
           initialValues={initialValues}
+          isSubmitting={isSubmitting}
           onCancel={onClose}
           onSubmit={onSubmit}
           submitLabel={submitLabel}

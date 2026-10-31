@@ -36,5 +36,25 @@ class DiscountCreate(BaseModel):
 class DiscountUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    discount_type: Literal["fixed", "percentage"] | None = None
+    value: StrictInt | None = Field(default=None, ge=0)
+    minimum_amount_paise: Paise | None = None
+    minimum_quantity: PositiveQuantity | None = None
+    starts_at: datetime | None = None
     is_active: bool | None = None
     ends_at: datetime | None = None
+    usage_limit: StrictInt | None = Field(default=None, gt=0)
+    product_ids: list[ObjectIdString] | None = None
+    applies_to_subscription: bool | None = None
+
+    @model_validator(mode="after")
+    def validate_rule(self):
+        for date in (self.starts_at, self.ends_at):
+            if date is not None and (date.tzinfo is None or date.utcoffset() is None):
+                raise ValueError("Discount dates must be timezone-aware")
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            raise ValueError("ends_at must follow starts_at")
+        if self.discount_type == "percentage" and self.value is not None and self.value > 10_000:
+            raise ValueError("Percentage value is basis points and cannot exceed 10000")
+        return self

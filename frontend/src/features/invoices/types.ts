@@ -1,4 +1,4 @@
-export type InvoiceStatus = "Draft" | "Confirmed" | "Paid";
+export type InvoiceStatus = "draft" | "confirmed" | "paid" | "cancelled";
 
 export interface InvoiceLine {
   product: string;
@@ -9,6 +9,7 @@ export interface InvoiceLine {
 }
 
 export interface InvoiceRecord {
+  id: string;
   number: string;
   customer: string;
   subscriptionNumber: string;
