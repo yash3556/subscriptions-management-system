@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -15,8 +16,18 @@ from app.core.exceptions import install_exception_handlers
 from app.core.logging_config import configure_logging
 from app.core.middleware import install_request_middleware
 from app.database.connection import MongoConnection
+from app.jobs.recurring_billing import billing_worker
 from app.routes.auth import router as auth_router
 from app.routes.users import router as staff_router
+from app.routes.customers import router as customers_router
+from app.routes.products import router as products_router
+from app.routes.plans import router as plans_router
+from app.routes.quotations import router as quotations_router
+from app.routes.subscriptions import router as subscriptions_router
+from app.routes.invoices import router as invoices_router
+from app.routes.payments import router as payments_router
+from app.routes.discounts import router as discounts_router
+from app.routes.dashboard import router as dashboard_router
 
 logger = logging.getLogger("brightloop.startup")
 
@@ -38,8 +49,19 @@ def create_app(
                 "mongodb_startup_connection_failed",
                 extra={"exception_type": type(exc).__name__},
             )
-        yield
-        connection.close()
+        billing_task = None
+        if active_settings.app_env.lower() != "test":
+            billing_task = asyncio.create_task(billing_worker(app))
+        try:
+            yield
+        finally:
+            if billing_task is not None:
+                billing_task.cancel()
+                try:
+                    await billing_task
+                except asyncio.CancelledError:
+                    pass
+            connection.close()
 
     app = FastAPI(
         title=active_settings.app_name,
@@ -70,6 +92,15 @@ def create_app(
     install_exception_handlers(app)
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(staff_router, prefix="/api/v1")
+    app.include_router(customers_router, prefix="/api/v1")
+    app.include_router(products_router, prefix="/api/v1")
+    app.include_router(plans_router, prefix="/api/v1")
+    app.include_router(quotations_router, prefix="/api/v1")
+    app.include_router(subscriptions_router, prefix="/api/v1")
+    app.include_router(invoices_router, prefix="/api/v1")
+    app.include_router(payments_router, prefix="/api/v1")
+    app.include_router(discounts_router, prefix="/api/v1")
+    app.include_router(dashboard_router, prefix="/api/v1")
 
     @app.get("/health/live", tags=["health"])
     async def liveness() -> dict[str, str]:
