@@ -54,7 +54,7 @@ export function InvoiceDetails({ invoice }: InvoiceDetailsProps) {
       <section className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6">
         <h2 className="font-semibold text-slate-900">Invoice lines</h2>
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[620px] text-left text-sm">
+          <table className="w-full min-w-155 text-left text-sm">
             <thead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="pb-2 pr-4" scope="col">Product</th>

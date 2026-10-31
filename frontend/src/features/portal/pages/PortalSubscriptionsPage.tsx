@@ -19,10 +19,12 @@ export function PortalSubscriptionsPage() {
         <span className="mb-3 inline-flex rounded-full bg-slate-100 p-3 text-slate-500">
           <Repeat aria-hidden="true" size={22} />
         </span>
-        <p className="font-medium text-slate-900">No subscription data loaded</p>
+        <p className="font-medium text-slate-900">
+          Subscription records unavailable
+        </p>
         <p className="mx-auto mt-1 max-w-md text-sm leading-5 text-slate-600">
-          Subscription details will appear after customer sign-in, ownership
-          enforcement, and backend integration are available.
+          The backend does not currently provide a customer-specific
+          subscription list endpoint. No records have been requested.
         </p>
       </div>
       <p className="mt-4 text-sm text-slate-500">

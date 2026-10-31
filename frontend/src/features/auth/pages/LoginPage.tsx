@@ -1,16 +1,23 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components/AuthLayout";
 import { AuthSubmitButton } from "../components/AuthSubmitButton";
 import { AuthTextField } from "../components/AuthTextField";
-import { FormNotice } from "../components/FormNotice";
 import { PasswordField } from "../components/PasswordField";
+import {
+  getLoginErrorMessage,
+} from "../../../services/authService";
+import { useAuth } from "../../../hooks/useAuth";
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   const emailError = submitted
     ? !email.trim()
@@ -22,9 +29,28 @@ export function LoginPage() {
   const passwordError =
     submitted && !password ? "Password is required." : "";
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
+
+    const validEmail =
+      Boolean(email.trim()) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!validEmail || !password) {
+      return;
+    }
+
+    setLoginError("");
+    setIsLoading(true);
+    try {
+      const user = await signIn(email.trim(), password);
+      navigate(user.role === "CUSTOMER" ? "/portal" : "/app/dashboard", {
+        replace: true,
+      });
+    } catch (error) {
+      setLoginError(getLoginErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -39,7 +65,10 @@ export function LoginPage() {
           id="login-email"
           label="Email"
           name="email"
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setLoginError("");
+          }}
           placeholder="you@company.com"
           required
           type="email"
@@ -52,7 +81,10 @@ export function LoginPage() {
             id="login-password"
             label="Password"
             name="password"
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setLoginError("");
+            }}
             required
             value={password}
           />
@@ -75,11 +107,16 @@ export function LoginPage() {
             </Link>
           </div>
         </div>
-        <AuthSubmitButton type="submit">Sign in</AuthSubmitButton>
-        {submitted && !emailError && !passwordError && (
-          <FormNotice>
-            Authentication is not connected yet. No credentials were sent.
-          </FormNotice>
+        <AuthSubmitButton isLoading={isLoading} type="submit">
+          Sign in
+        </AuthSubmitButton>
+        {loginError && (
+          <p
+            className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800"
+            role="alert"
+          >
+            {loginError}
+          </p>
         )}
       </form>
       <p className="mt-6 text-center text-sm text-slate-600">

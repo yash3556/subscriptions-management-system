@@ -1,7 +1,7 @@
 import { Check, Circle } from "lucide-react";
 
 export const PASSWORD_PATTERN =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{9,}$/;
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9\s]).{9,}$/;
 
 interface PasswordRequirementsProps {
   password: string;

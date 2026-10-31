@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
 import { FileText, Repeat } from "lucide-react";
+import { useAuth } from "../../../hooks/useAuth";
 
 export function PortalOverviewPage() {
+  const { user } = useAuth();
+
   return (
     <section
       aria-labelledby="portal-overview-title"
@@ -14,7 +17,7 @@ export function PortalOverviewPage() {
         Account overview
       </h1>
       <p className="mt-1 text-sm leading-6 text-slate-600">
-        View your subscriptions and invoice information.
+        Welcome, {user?.name}. View the areas available in your account.
       </p>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <PortalLinkCard
@@ -31,10 +34,10 @@ export function PortalOverviewPage() {
         />
       </div>
       <div className="mt-5 rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-        <p className="font-medium text-slate-900">Account summary unavailable</p>
+        <p className="font-medium text-slate-900">Account records unavailable</p>
         <p className="mt-1 text-sm text-slate-600">
-          Subscription and invoice summaries will be shown after customer
-          authentication and backend integration.
+          Customer-specific subscription and invoice list APIs are not
+          implemented in the backend yet, so no account records can be loaded.
         </p>
       </div>
     </section>

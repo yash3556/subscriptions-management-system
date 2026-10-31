@@ -25,6 +25,7 @@ import { PortalLayout } from "../features/portal/components/PortalLayout";
 import { PortalOverviewPage } from "../features/portal/pages/PortalOverviewPage";
 import { PortalSubscriptionsPage } from "../features/portal/pages/PortalSubscriptionsPage";
 import { PortalInvoicesPage } from "../features/portal/pages/PortalInvoicesPage";
+import { RequireCustomer } from "../features/auth/components/RequireCustomer";
 
 const appPages = [
   { path: "dashboard", title: "Dashboard" },
@@ -47,7 +48,14 @@ export function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/portal" element={<PortalLayout />}>
+      <Route
+        path="/portal"
+        element={
+          <RequireCustomer>
+            <PortalLayout />
+          </RequireCustomer>
+        }
+      >
         <Route index element={<PortalOverviewPage />} />
         <Route path="subscriptions" element={<PortalSubscriptionsPage />} />
         <Route path="invoices" element={<PortalInvoicesPage />} />

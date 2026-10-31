@@ -105,7 +105,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           <p className="mt-2 text-sm text-slate-600">No variants.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[420px] text-left text-sm">
+            <table className="w-full min-w-105 text-left text-sm">
               <thead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="pb-2 pr-4" scope="col">

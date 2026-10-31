@@ -3,12 +3,15 @@ import { Link } from "react-router-dom";
 import { AuthLayout } from "../components/AuthLayout";
 import { AuthSubmitButton } from "../components/AuthSubmitButton";
 import { AuthTextField } from "../components/AuthTextField";
-import { FormNotice } from "../components/FormNotice";
 import { PasswordField } from "../components/PasswordField";
 import {
   PASSWORD_PATTERN,
   PasswordRequirements,
 } from "../components/PasswordRequirements";
+import {
+  getRegistrationErrorMessage,
+  registerCustomer,
+} from "../../../services/authService";
 
 export function RegisterPage() {
   const [name, setName] = useState("");
@@ -16,6 +19,9 @@ export function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [registrationError, setRegistrationError] = useState("");
+  const [isRegistered, setIsRegistered] = useState(false);
 
   const nameError = submitted && !name.trim() ? "Name is required." : "";
   const emailError = submitted
@@ -36,13 +42,41 @@ export function RegisterPage() {
         ? "Passwords do not match."
         : "";
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
-  }
+    setRegistrationError("");
+    setIsRegistered(false);
 
-  const hasErrors =
-    Boolean(nameError || emailError || passwordError || confirmPasswordError);
+    const validName = Boolean(name.trim());
+    const validEmail =
+      Boolean(email.trim()) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const validPassword = PASSWORD_PATTERN.test(password);
+    const matchingPasswords =
+      Boolean(confirmPassword) && password === confirmPassword;
+
+    if (!validName || !validEmail || !validPassword || !matchingPasswords) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await registerCustomer({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
+      setIsRegistered(true);
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      setRegistrationError(getRegistrationErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <AuthLayout
@@ -96,11 +130,28 @@ export function RegisterPage() {
           required
           value={confirmPassword}
         />
-        <AuthSubmitButton type="submit">Create account</AuthSubmitButton>
-        {submitted && !hasErrors && (
-          <FormNotice>
-            Registration is not connected yet. No account was created.
-          </FormNotice>
+        <AuthSubmitButton isLoading={isLoading} type="submit">
+          Create account
+        </AuthSubmitButton>
+        {registrationError && (
+          <p
+            className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800"
+            role="alert"
+          >
+            {registrationError}
+          </p>
+        )}
+        {isRegistered && (
+          <div
+            className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900"
+            role="status"
+          >
+            Account created. You can now{" "}
+            <Link className="font-semibold underline" to="/login">
+              sign in
+            </Link>
+            .
+          </div>
         )}
       </form>
       <p className="mt-6 text-center text-sm text-slate-600">
