@@ -22,17 +22,17 @@ export function RevenueChart({ data }: { data: RevenueDataPoint[] }) {
     <div aria-label="Revenue chart" className="h-64 w-full">
       <ResponsiveContainer height="100%" width="100%">
         <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
-          <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" />
-          <XAxis dataKey="period" tick={{ fill: "#64748b", fontSize: 12 }} />
+          <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" />
+          <XAxis dataKey="period" tick={{ fill: "var(--text-muted)", fontSize: 12 }} />
           <YAxis
-            tick={{ fill: "#64748b", fontSize: 12 }}
+            tick={{ fill: "var(--text-muted)", fontSize: 12 }}
             tickFormatter={(value: number) => value.toLocaleString()}
           />
           <Tooltip />
           <Line
             dataKey="revenue"
             name="Revenue"
-            stroke="#2563eb"
+            stroke="var(--violet-500)"
             strokeWidth={2}
             type="monotone"
           />

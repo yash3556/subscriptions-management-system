@@ -43,17 +43,18 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform md:static md:translate-x-0 ${
+      className={`app-sidebar fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform md:static md:translate-x-0 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
       <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5">
         <NavLink
-          className="text-lg font-semibold tracking-tight text-slate-900"
+          className="brand-lockup text-lg font-semibold tracking-tight text-slate-900"
           onClick={onNavigate}
           to="/app/dashboard"
         >
-          Brightloop
+          <span aria-hidden="true" className="brand-mark">B</span>
+          <span>Brightloop</span>
         </NavLink>
         <button
           aria-label="Close navigation menu"
@@ -64,7 +65,8 @@ export function Sidebar({ isOpen, onNavigate }: SidebarProps) {
           <X aria-hidden="true" size={20} />
         </button>
       </div>
-      <nav aria-label="Main navigation" className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav aria-label="Main navigation" className="app-navigation flex-1 space-y-1 overflow-y-auto p-3">
+        <p className="nav-section-label">Workspace</p>
         {visibleNavigation.map(({ label, path, icon: Icon }) => (
           <NavLink
             key={path}

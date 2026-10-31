@@ -37,3 +37,13 @@ npm run preview
 
 The current screens are routing and layout placeholders only; authentication
 and business modules are not implemented.
+
+## Visual system
+
+Workspace and customer-portal design tokens live in [`src/index.css`](./src/index.css)
+and are scoped to their layout roots. The dashboard and portal use the supplied
+plum-lavender palette: deep plum (`#49225B`), plum (`#6E3482`), mauve
+(`#A56ABD`), soft lavender (`#E7DBEF`), and pale lavender (`#F5EBFA`).
+Success, warning, danger, and information colors use restrained semantic tints.
+Authentication screens retain their existing styling and are not affected by
+the workspace palette.
