@@ -4,10 +4,17 @@ import { AuthLayout } from "../components/AuthLayout";
 import { AuthSubmitButton } from "../components/AuthSubmitButton";
 import { AuthTextField } from "../components/AuthTextField";
 import { FormNotice } from "../components/FormNotice";
+import {
+  getForgotPasswordErrorMessage,
+  requestPasswordReset,
+} from "../../../services/authService";
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
+  const [requestError, setRequestError] = useState("");
 
   const emailError = submitted
     ? !email.trim()
@@ -17,9 +24,25 @@ export function ForgotPasswordPage() {
         : ""
     : "";
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
+    setRequestSent(false);
+    setRequestError("");
+
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await requestPasswordReset(email.trim());
+      setRequestSent(true);
+    } catch (error) {
+      setRequestError(getForgotPasswordErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -34,16 +57,31 @@ export function ForgotPasswordPage() {
           id="forgot-email"
           label="Email"
           name="email"
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setRequestSent(false);
+            setRequestError("");
+          }}
           placeholder="you@company.com"
           required
           type="email"
           value={email}
         />
-        <AuthSubmitButton type="submit">Continue</AuthSubmitButton>
-        {submitted && !emailError && (
+        <AuthSubmitButton isLoading={isLoading} type="submit">
+          Continue
+        </AuthSubmitButton>
+        {requestError && (
+          <p
+            className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800"
+            role="alert"
+          >
+            {requestError}
+          </p>
+        )}
+        {requestSent && (
           <FormNotice>
-            Password recovery is not connected yet. No request was sent.
+            If an account exists for this email, a password reset link will be
+            sent. Check your inbox.
           </FormNotice>
         )}
       </form>
